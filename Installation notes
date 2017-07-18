@@ -1,0 +1,4 @@
+/src/proto/gps.proto file:
+-protocol buffer definition
+-some default value settings, sample size
+-some enum types defined - how are these enums used?
