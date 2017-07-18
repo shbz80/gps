@@ -48,7 +48,7 @@ if not os.path.exists(common['data_files_dir']):
 
 agent = {
     'type': AgentMuJoCo,
-    'filename': '/home/shahbaz/Research/Software/gps/mjc_models/yumi_right_peg_mjcf.xml',
+    'filename': '/home/shahbaz/Research/Software/Spyder_ws/gps/mjc_models/yumi_right_peg_mjcf.xml',
     'x0': np.concatenate([np.array([0.1, 0.1, -1.54, -1.7, 1.54, -0.2, 0]),
                           np.zeros(7)]),
     'dt': 0.05,

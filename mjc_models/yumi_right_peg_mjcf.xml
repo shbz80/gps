@@ -2,7 +2,7 @@
 This file was originally generated with both collision and visual meshes in the urdf file
 Should it redone with all collision mesh replaced in the urdf? -->
 <mujoco model="abb_irb14000">
-    <compiler angle="radian" meshdir="/home/shahbaz/Research/Software/yumi_mujoco/yumi_model/" />
+    <compiler angle="radian" meshdir="/home/shahbaz/Research/Software/Spyder_ws/gps/yumi_model/" />
     <option timestep="0.01" gravity="0 0 0" iterations="20" integrator="RK4" />
     <!-- Copied from PR2 model in GPS. This was necessary to get natural behaviour -->
     <default>
