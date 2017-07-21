@@ -1,3 +1,5 @@
+# To get started, copy over hyperparams from another experiment.
+# Visit rll.berkeley.edu/gps/hyperparams.html for documentation.
 """ Hyperparameters for MJC peg insertion trajectory optimization. """
 from __future__ import division
 
@@ -27,10 +29,10 @@ SENSOR_DIMS = {
     ACTION: 7,
 }
 
-PR2_GAINS = np.array([3.09, 1.08, 0.393, 0.674, 0.111, 0.152, 0.098])
+yumi_GAINS = np.array([3.09, 1.08, 0.393, 0.674, 0.111, 0.152, 0.098])
 
 BASE_DIR = '/'.join(str.split(gps_filepath, '/')[:-2])
-EXP_DIR = BASE_DIR + '/../experiments/mjc_example/'
+EXP_DIR = BASE_DIR + '/../experiments/yumi_exp/'
 
 
 common = {
@@ -40,7 +42,7 @@ common = {
     'data_files_dir': EXP_DIR + 'data_files/',
     'target_filename': EXP_DIR + 'target.npz',
     'log_filename': EXP_DIR + 'log.txt',
-    'conditions': 1, # shahbaz
+    'conditions': 1,
 }
 
 if not os.path.exists(common['data_files_dir']):
@@ -48,22 +50,33 @@ if not os.path.exists(common['data_files_dir']):
 
 agent = {
     'type': AgentMuJoCo,
-    'filename': './mjc_models/pr2_arm3d.xml',
-    'x0': np.concatenate([np.array([0.1, 0.1, -1.54, -1.7, 1.54, -0.2, 0]),
+    'filename': '/home/shahbaz/Research/Software/Spyder_ws/gps/mjc_models/yumi_right_peg_mjcf.xml',
+#   setting initial pos to zero pos of the robot - shahbaz
+    #~ 'x0': np.concatenate([np.array([0.7, -1.57, -0.7, 0.35, 0.7, 0., -1.]),
+                          #~ np.zeros(7)]),
+    'x0': np.concatenate([np.array([0.4, -2.2, -0.7, 0.35, 0.7, 0., -1.]),
                           np.zeros(7)]),
+    #~ 'x0': np.concatenate([np.array([0.1, 0.1, -1.54, -1.7, 1.54, -0.2, 0]),
+                          #~ np.zeros(7)]),
     'dt': 0.05,
     'substeps': 5,
     'conditions': common['conditions'],
     'pos_body_idx': np.array([1]),
 #    'pos_body_offset': [[np.array([0, 0.2, 0])], [np.array([0, 0.1, 0])],
-#                        [np.array([0, -0.1, 0])], [np.array([0, -0.2, 0])]], shahbaz
+#                        [np.array([0, -0.1, 0])], [np.array([0, -0.2, 0])]],
+#   changing to only 1 initial condition - shahbaz
     'pos_body_offset': [[np.array([0, 0, 0])]],
     'T': 100,
     'sensor_dims': SENSOR_DIMS,
     'state_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS,
                       END_EFFECTOR_POINT_VELOCITIES],
     'obs_include': [],
-    'camera_pos': np.array([0., 0., 2., 0., 0.2, 0.5]),
+#   changing the camera pos for better view - shahbaz
+#    'camera_pos': np.array([0., 0., 2., 0., 0.2, 0.5]),
+#    'camera_pos': np.array([0., 0., 3., 0., 0., 0.]),
+#    'camera_pos': np.array([5.0, 0., 3., 0., 0., 0.]),
+#   'camera_pos': np.array([5.0, 0.5, 3., 0., 0., 0.]),
+    'camera_pos': np.array([5.0, 0.5, 3., 0., 0., 0.]),
 }
 
 algorithm = {
@@ -74,7 +87,7 @@ algorithm = {
 
 algorithm['init_traj_distr'] = {
     'type': init_lqr,
-    'init_gains':  1.0 / PR2_GAINS,
+    'init_gains':  1.0 / yumi_GAINS,
     'init_acc': np.zeros(SENSOR_DIMS[ACTION]),
     'init_var': 1.0,
     'stiffness': 1.0,
@@ -85,14 +98,15 @@ algorithm['init_traj_distr'] = {
 
 torque_cost = {
     'type': CostAction,
-    'wu': 5e-5 / PR2_GAINS,
+    'wu': 5e-5 / yumi_GAINS,
 }
 
 fk_cost = {
     'type': CostFK,
-    'target_end_effector': np.array([0.0, 0.3, -0.5, 0.0, 0.3, -0.2]), #- shahbaz
-#   Facing the robot; X:left(+)-right(-), Y:front(+)-back(-), Z:up(+)-down(-) 
-#    'target_end_effector': np.array([0.3, 0.3, 0.3, 0., 0., 0.]),
+#    'target_end_effector': np.array([0.0, 0.3, -0.5, 0.0, 0.3, -0.2]), - shahbaz
+#    'target_end_effector': np.array([0.3876 , -0.4418, 0.3985, 1.38, 0.1842, -0.0128]),
+    #~ 'target_end_effector': np.array([0.4 , -0.4, 0.4, 0.4, -0.2, 0.4]), - worked really well
+    'target_end_effector': np.array([0.4 ,-0.45, 0.28, 0.4, -0.45, 0.08]),
     'wp': np.array([1, 1, 1, 1, 1, 1]),
     'l1': 0.1,
     'l2': 10.0,

@@ -103,6 +103,7 @@ config = {
     'target_output_fontsize': 10,
 
     # GPS Training
+#    'initial_mode': 'wait', - shahbaz
     'initial_mode': 'run',
     'algthm_output_fontsize': 10,
     'algthm_output_max_display_size': 15,

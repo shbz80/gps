@@ -13,6 +13,10 @@ Algorithm Output Textbox    displays algorithm output after each iteration
 Image Visualizer            displays images received from a rostopic
 
 For more detailed documentation, visit: rll.berkeley.edu/gps/gui
+
+This file has been modified for plotting joint variables in a second window - shahbaz
+The new plots are all 2D plots and are called detailed plots. The value of 
+self.self.numPlots_d has to be modified to match the total number of new plots
 """
 import time
 import threading
@@ -26,17 +30,23 @@ from gps.gui.action_panel import Action, ActionPanel
 from gps.gui.textbox import Textbox
 from gps.gui.mean_plotter import MeanPlotter
 from gps.gui.plotter_3d import Plotter3D
+from gps.gui.plotter_2d import Plotter2D # - shahbaz
 from gps.gui.image_visualizer import ImageVisualizer
 from gps.gui.util import buffered_axis_limits, load_data_from_npz
 
+#importing the sensor types -shahbaz
 from gps.proto.gps_pb2 import END_EFFECTOR_POINTS
+from gps.proto.gps_pb2 import JOINT_ANGLES
+from gps.proto.gps_pb2 import JOINT_VELOCITIES
+from gps.proto.gps_pb2 import ACTION
 
 # Needed for typechecks
 from gps.algorithm.algorithm_badmm import AlgorithmBADMM
 from gps.algorithm.algorithm_mdgps import AlgorithmMDGPS
 
 class GPSTrainingGUI(object):
-
+    
+    
     def __init__(self, hyperparams):
         self._hyperparams = hyperparams
         self._log_filename = self._hyperparams['log_filename']
@@ -60,7 +70,7 @@ class GPSTrainingGUI(object):
             'fail': 'magenta',
         }
         self._first_update = True
-
+        self.numPlots_d=27 # total number of plots in the detailed plot window - to be moved somewhere else - shahbaz
         # Actions.
         actions_arr = [
             Action('stop',  'stop',  self.request_stop,  axis_pos=0),
@@ -79,7 +89,7 @@ class GPSTrainingGUI(object):
         self._fig = plt.figure(figsize=config['figsize'])
         self._fig.subplots_adjust(left=0.01, bottom=0.01, right=0.99, top=0.99,
                 wspace=0, hspace=0)
-
+                
         # Assign GUI component locations.
         self._gs = gridspec.GridSpec(16, 8)
         self._gs_action_panel           = self._gs[0:2,  0:8]
@@ -132,7 +142,73 @@ class GPSTrainingGUI(object):
                 color='red', label='LG Controller Distributions')
 
         self._fig.canvas.draw()
+        
+        #######################START:Detailed plotting############################## - shahbaz
+#        self._fig_d = plt.figure(figsize=config['figsize'])
+        self._fig_d = plt.figure(figsize=(24,12))
+        self._fig.subplots_adjust(left=0.01, bottom=0.01, right=0.99, top=0.99,
+                wspace=0, hspace=0)
+                
+        # Assign GUI component locations 
+        self._gs_d = gridspec.GridSpec(16, 32)
+        self._gs_d_traj_visualizer = self._gs_d[0:16, 0:32]
+        
+        # Create GUI components 
+        self._traj_visualizer_d = Plotter2D(self._fig_d, self._gs_d_traj_visualizer,
+                num_plots=self.numPlots_d,rows=4,cols=7)
+        
+        # Setup 2D Trajectory Visualizer plot titles and legends
+        # Joint positions
+        self._traj_visualizer_d.set_title(0, 'j1Pos')
+        self._traj_visualizer_d.set_title(1, 'j2Pos')
+        self._traj_visualizer_d.set_title(2, 'j3Pos')
+        self._traj_visualizer_d.set_title(3, 'j4Pos')
+        self._traj_visualizer_d.set_title(4, 'j5Pos')
+        self._traj_visualizer_d.set_title(5, 'j6Pos')
+        self._traj_visualizer_d.set_title(6, 'j7Pos')
+        
+        # Joint velocities
+        self._traj_visualizer_d.set_title(7, 'j1Vel')
+        self._traj_visualizer_d.set_title(8, 'j2Vel')
+        self._traj_visualizer_d.set_title(9, 'j3Vel')
+        self._traj_visualizer_d.set_title(10, 'j4Vel')
+        self._traj_visualizer_d.set_title(11, 'j5Vel')
+        self._traj_visualizer_d.set_title(12, 'j6Vel')
+        self._traj_visualizer_d.set_title(13, 'j7Vel')
+        
+        # Joint torques
+        self._traj_visualizer_d.set_title(14, 'j1Trq')
+        self._traj_visualizer_d.set_title(15, 'j2Trq')
+        self._traj_visualizer_d.set_title(16, 'j3Trq')
+        self._traj_visualizer_d.set_title(17, 'j4Trq')
+        self._traj_visualizer_d.set_title(18, 'j5Trq')
+        self._traj_visualizer_d.set_title(19, 'j6Trq')
+        self._traj_visualizer_d.set_title(20, 'j7Trq')
+        
+         # Cartesian positions
+        self._traj_visualizer_d.set_title(21, 'EE1x')
+        self._traj_visualizer_d.set_title(22, 'EE1y')
+        self._traj_visualizer_d.set_title(23, 'EE1z')
+        self._traj_visualizer_d.set_title(24, 'EE2x')
+        self._traj_visualizer_d.set_title(25, 'EE2y')
+        self._traj_visualizer_d.set_title(26, 'EE2z')
+        
+        
+        self._traj_visualizer_d.add_legend(linestyle='-', marker='None',
+                color='green', label='Joint positions')
+        self._traj_visualizer_d.add_legend(linestyle='-', marker='None',
+                color='blue', label='Joint velocities')
+        self._traj_visualizer_d.add_legend(linestyle='-', marker='None',
+                color='red', label='Joint torques')
+        self._traj_visualizer_d.add_legend(linestyle='-', marker='None',
+                color='cyan', label='EE1xyz')
+        self._traj_visualizer_d.add_legend(linestyle='-', marker='None',
+                color='magenta', label='EE2xyz')
 
+        self._fig_d.canvas.draw()
+        
+        #######################END:Detailed plotting##############################
+                
         # Display calculating thread
         def display_calculating(delay, run_event):
             while True:
@@ -281,6 +357,8 @@ class GPSTrainingGUI(object):
 
         self._fig.canvas.draw()
         self._fig.canvas.flush_events() # Fixes bug in Qt4Agg backend
+        self._fig_d.canvas.draw()# - shahbaz
+        self._fig_d.canvas.flush_events() # Fixes bug in Qt4Agg backend - shahbaz
 
     def _output_column_titles(self, algorithm, policy_titles=False):
         """
@@ -350,13 +428,20 @@ class GPSTrainingGUI(object):
         xlim, ylim, zlim = self._calculate_3d_axis_limits(traj_sample_lists, pol_sample_lists)
         for m in range(algorithm.M):
             self._traj_visualizer.clear(m)
+            # clearing the detailed plots after each iteration - shahbaz
+            for j in range(self.numPlots_d):
+                self._traj_visualizer_d.clear(j)
+                
             self._traj_visualizer.set_lim(i=m, xlim=xlim, ylim=ylim, zlim=zlim)
+#            self._traj_visualizer_d.set_lim(i=m, xlim=xlim, ylim=ylim) # limit setting - shahbaz
             if algorithm._hyperparams['fit_dynamics']:
                 self._update_linear_gaussian_controller_plots(algorithm, agent, m)                                
             self._update_samples_plots(traj_sample_lists, m, 'green', 'Trajectory Samples')
+            self._update_samples_plots_d(traj_sample_lists, m) # - shahbaz
             if pol_sample_lists:
                 self._update_samples_plots(pol_sample_lists,  m, 'blue',  'Policy Samples')
         self._traj_visualizer.draw()    # this must be called explicitly
+        self._traj_visualizer_d.draw()    # this must be called explicitly - shahbaz
 
     def _calculate_3d_axis_limits(self, traj_sample_lists, pol_sample_lists):
         """
@@ -413,9 +498,59 @@ class GPSTrainingGUI(object):
         samples = sample_lists[m].get_samples()
         for sample in samples:
             ee_pt = sample.get(END_EFFECTOR_POINTS)
+            
             for i in range(ee_pt.shape[1]/3):
                 ee_pt_i = ee_pt[:, 3*i+0:3*i+3]
                 self._traj_visualizer.plot_3d_points(m, ee_pt_i, color=color, label=label)
 
+                    
+    def _update_samples_plots_d(self, sample_lists, m,): # shahbaz
+        """
+        Update the samples plots with iteration data, for the trajectory samples
+        and the policy samples.
+        """
+        samples = sample_lists[m].get_samples()
+        for sample in samples:
+            xp_pt = sample.get(END_EFFECTOR_POINTS)
+            jp_pt = sample.get(JOINT_ANGLES)
+            jv_pt = sample.get(JOINT_VELOCITIES)
+            jt_pt = sample.get(ACTION)
+            
+            # plot joint  plots
+            sNum = len(jp_pt[:,0])
+            jNum = len(jp_pt[0,:])
+            time = np.arange(sNum)
+            time = time.reshape(sNum,1)
+            for sig in range(3): # 3 types of signals to plot: jpos, jvel, jtrq
+                # joint pos
+                for j in range(jNum):
+                    if (sig==0): # if jpos
+                        pt = jp_pt[:, j:j+1]
+                        color_d='green'
+                    elif (sig==1): # if jvel
+                        pt = jv_pt[:, j:j+1]
+                        color_d='blue'
+                    elif (sig==2): # if jtrq
+                        pt = jt_pt[:, j:j+1]
+                        color_d='red'
+                    pt_t = np.concatenate((time,pt),1)
+                    self._traj_visualizer_d.plot_2d_points(sig*jNum+j, pt_t, color=color_d, label='label')
+                    
+            for x in range(3):
+                pt = xp_pt[:, x:x+1] # first ee pos
+                color_d='cyan'
+                pt_t = np.concatenate((time,pt),1)
+                self._traj_visualizer_d.plot_2d_points(3*jNum+x, pt_t, color=color_d, label='label')
+                
+                pt = xp_pt[:, x+3:x+3+1] # second ee pos
+                color_d='magenta'
+                pt_t = np.concatenate((time,pt),1)
+                self._traj_visualizer_d.plot_2d_points(3*jNum+x+3, pt_t, color=color_d, label='label')
+                    
+            
+                
     def save_figure(self, filename):
         self._fig.savefig(filename)
+        
+    def save_figure_d(self, filename): # shahbaz
+        self._fig_d.savefig(filename)
