@@ -50,7 +50,7 @@ if not os.path.exists(common['data_files_dir']):
 
 agent = {
     'type': AgentMuJoCo,
-    'filename': '/home/shahbaz/Research/Software/Spyder_ws/gps/mjc_models/yumi_right_peg_mjcf.xml',
+    'filename': '/home/shahbaz/Research/Software/Spyder_ws/gps/mjc_models/yumi_right_rect_peg_mjcf.xml',
 #   setting initial pos to zero pos of the robot - shahbaz
 #    'x0': np.concatenate([np.array([0.7, -1.57, -0.7, 0.35, 0.7, 0., -1.]),
 #                          np.zeros(7)]),
@@ -66,7 +66,7 @@ agent = {
 #                        [np.array([0, -0.1, 0])], [np.array([0, -0.2, 0])]],
 #   changing to only 1 initial condition - shahbaz
     'pos_body_offset': [[np.array([0, 0, 0])]],
-    'T': 100,
+    'T': 200,
     'sensor_dims': SENSOR_DIMS,
     'state_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS,
                       END_EFFECTOR_POINT_VELOCITIES],
@@ -82,7 +82,7 @@ agent = {
 algorithm = {
     'type': AlgorithmTrajOpt,
     'conditions': common['conditions'],
-    'iterations': 10,
+    'iterations': 25,
 }
 
 algorithm['init_traj_distr'] = {
@@ -142,7 +142,7 @@ config = {
     'verbose_trials': 1,
     'common': common,
     'agent': agent,
-    'gui_on': True,
+    'gui_on': False,
     'algorithm': algorithm,
 }
 

@@ -51,7 +51,7 @@ class GPSMain(object):
         config['algorithm']['agent'] = self.agent
         self.algorithm = config['algorithm']['type'](config['algorithm'])
 
-    def run(self, itr_load=None):
+    def run(self, itr_load=None, exploration_off=False):
         """
         Run training by iteratively sampling and taking an iteration.
         Args:
@@ -65,7 +65,7 @@ class GPSMain(object):
             for itr in range(itr_start, self._hyperparams['iterations']):
                 for cond in self._train_idx:
                     for i in range(self._hyperparams['num_samples']):
-                        self._take_sample(itr, cond, i)
+                        self._take_sample(itr, cond, i, exploration_off)
 
                 traj_sample_lists = [
                     self.agent.get_samples(cond, -self._hyperparams['num_samples'])
@@ -147,7 +147,7 @@ class GPSMain(object):
                     'Press \'go\' to begin.') % itr_load)
             return itr_load + 1
 
-    def _take_sample(self, itr, cond, i):
+    def _take_sample(self, itr, cond, i, exploration_off=False): # - shahbaz
         """
         Collect a sample from the agent.
         Args:
@@ -156,6 +156,11 @@ class GPSMain(object):
             i: Sample number.
         Returns: None
         """
+        if exploration_off: # - shahbaz
+            noisy=False
+        else:
+            noisy=True
+            
         if self.algorithm._hyperparams['sample_on_policy'] \
                 and self.algorithm.iteration_count > 0:
             pol = self.algorithm.policy_opt.policy
@@ -185,7 +190,8 @@ class GPSMain(object):
                 )
                 self.agent.sample(
                     pol, cond,
-                    verbose=(i < self._hyperparams['verbose_trials'])
+                    verbose=(i < self._hyperparams['verbose_trials']),
+                    noisy=noisy
                 )
 
                 if self.gui.mode == 'request' and self.gui.request == 'fail':
@@ -197,7 +203,8 @@ class GPSMain(object):
         else:
             self.agent.sample(
                 pol, cond,
-                verbose=(i < self._hyperparams['verbose_trials'])
+                verbose=(i < self._hyperparams['verbose_trials']),
+                noisy=noisy
             )
 
     def _take_iteration(self, itr, sample_lists):
@@ -289,6 +296,8 @@ def main():
                         help='run target setup')
     parser.add_argument('-r', '--resume', metavar='N', type=int,
                         help='resume training from iter N')
+    parser.add_argument('-d', '--demo',metavar='N',type=int,
+                        help='demo the final policy without exploration') # - shahbaz
     parser.add_argument('-p', '--policy', metavar='N', type=int,
                         help='take N policy samples (for BADMM/MDGPS only)')
     parser.add_argument('-s', '--silent', action='store_true',
@@ -391,15 +400,21 @@ def main():
         import random
         import numpy as np
         import matplotlib.pyplot as plt
-
+        
         seed = hyperparams.config.get('random_seed', 0)
         random.seed(seed)
         np.random.seed(seed)
+        exploration_off=False # - shahbaz
 
         gps = GPSMain(hyperparams.config, args.quit)
+        
+        if (args.demo):
+            resume_training_itr=hyperparams.config['iterations']-2 # - shahbaz
+            exploration_off=True
+            
         if hyperparams.config['gui_on']:
             run_gps = threading.Thread(
-                target=lambda: gps.run(itr_load=resume_training_itr)
+                target=lambda: gps.run(itr_load=resume_training_itr, exploration_off=exploration_off)
             )
             run_gps.daemon = True
             run_gps.start()
@@ -407,7 +422,7 @@ def main():
             plt.ioff()
             plt.show()
         else:
-            gps.run(itr_load=resume_training_itr)
+            gps.run(itr_load=resume_training_itr, exploration_off=exploration_off)
 
 
 if __name__ == "__main__":
