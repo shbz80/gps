@@ -3,7 +3,6 @@ from __future__ import division
 
 from datetime import datetime
 import os.path
-
 import numpy as np
 
 from gps import __file__ as gps_filepath

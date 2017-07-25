@@ -17,3 +17,5 @@ install python-skimage
 comment tf stuff in hyperparameters file
 
 change gpu to cpu in config-oy file
+
+change gazebo launch file as per instruction
