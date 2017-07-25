@@ -1,0 +1,13 @@
+/src/proto/gps.proto file:
+-protocol buffer definition
+-some default value settings, sample size
+-some enum types defined - how are these enums used?
+
+install cuda only if Nvidia gpu is available, otherwise cpu only installation
+install ros-indigo-pr2simulator through synaptic
+install convex decomposition and ivcon manually
+atlas for blas
+
+cmake . -DUSE_CAFFE=1 -DCAFFE_INCLUDE_PATH=/home/shahbaz/Research/Software/caffe/distribute/include -DCAFFE_LIBRARY_PATH=/home/shahbaz/Research/Software/caffe/build/lib
+
+install python-skimage
