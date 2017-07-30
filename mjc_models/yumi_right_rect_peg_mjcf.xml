@@ -97,6 +97,10 @@ Should it redone with all collision mesh replaced in the urdf? -->
                                                         <geom name="ball_geom" rgba="0.8 0.6 0.6 1" type="cylinder" group="1" fromto="0 -0.15 0 0 0.05 0" size="0.025" density="2000" contype="2" conaffinity="1" />
 -->
                                                         <geom name="ball_geom" rgba="0.8 0.6 0.6 1" type="box" group="1" size="0.025 0.1 0.025" density="2000" contype="2" conaffinity="1" />
+<!--
+                                                        <geom name="ball_geom" rgba="0.8 0.6 0.6 1" type="box" group="1" size="0.025 0.1 0.025" contype="2" conaffinity="1" />
+-->
+   
                                                     </body>
                                                 </body>
                                             </body>

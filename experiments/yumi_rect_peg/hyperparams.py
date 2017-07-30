@@ -32,7 +32,7 @@ SENSOR_DIMS = {
 yumi_GAINS = np.array([3.09, 1.08, 0.393, 0.674, 0.111, 0.152, 0.098])
 
 BASE_DIR = '/'.join(str.split(gps_filepath, '/')[:-2])
-EXP_DIR = BASE_DIR + '/../experiments/yumi_exp/'
+EXP_DIR = BASE_DIR + '/../experiments/yumi_rect_peg/'
 
 
 common = {
@@ -59,14 +59,14 @@ agent = {
     #~ 'x0': np.concatenate([np.array([0.1, 0.1, -1.54, -1.7, 1.54, -0.2, 0]),
                           #~ np.zeros(7)]),
     'dt': 0.05,
-    'substeps': 5,
+    'substeps': 3, # shahbaz
     'conditions': common['conditions'],
     'pos_body_idx': np.array([1]),
 #    'pos_body_offset': [[np.array([0, 0.2, 0])], [np.array([0, 0.1, 0])],
 #                        [np.array([0, -0.1, 0])], [np.array([0, -0.2, 0])]],
 #   changing to only 1 initial condition - shahbaz
     'pos_body_offset': [[np.array([0, 0, 0])]],
-    'T': 200,
+    'T': 100,
     'sensor_dims': SENSOR_DIMS,
     'state_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS,
                       END_EFFECTOR_POINT_VELOCITIES],
@@ -82,7 +82,7 @@ agent = {
 algorithm = {
     'type': AlgorithmTrajOpt,
     'conditions': common['conditions'],
-    'iterations': 25,
+    'iterations': 20,
 }
 
 algorithm['init_traj_distr'] = {
@@ -106,7 +106,8 @@ fk_cost = {
 #    'target_end_effector': np.array([0.0, 0.3, -0.5, 0.0, 0.3, -0.2]), - shahbaz
 #    'target_end_effector': np.array([0.3876 , -0.4418, 0.3985, 1.38, 0.1842, -0.0128]),
     #~ 'target_end_effector': np.array([0.4 , -0.4, 0.4, 0.4, -0.2, 0.4]), - worked really well
-    'target_end_effector': np.array([0.4 ,-0.45, 0.28, 0.4, -0.45, 0.08]),
+    #~ 'target_end_effector': np.array([0.4 ,-0.45, 0.25, 0.4, -0.45, 0.05]),
+    'target_end_effector': np.array([0.4 ,-0.45, 0.3, 0.4, -0.45, 0.10]),
     'wp': np.array([1, 1, 1, 1, 1, 1]),
     'l1': 0.1,
     'l2': 10.0,
@@ -142,7 +143,7 @@ config = {
     'verbose_trials': 1,
     'common': common,
     'agent': agent,
-    'gui_on': False,
+    'gui_on': True,
     'algorithm': algorithm,
 }
 

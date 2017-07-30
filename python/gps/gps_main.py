@@ -102,6 +102,8 @@ class GPSMain(object):
             ('traj_sample_itr_%02d.pkl' % itr))
 
         pol_sample_lists = self._take_policy_samples(N)
+#        print type(pol_sample_lists)
+#        print len(pol_sample_lists)
         self.data_logger.pickle(
             self._data_files_dir + ('pol_sample_itr_%02d.pkl' % itr),
             copy.copy(pol_sample_lists)
@@ -260,6 +262,9 @@ class GPSMain(object):
             self.gui.save_figure(
                 self._data_files_dir + ('figure_itr_%02d.png' % itr)
             )
+            self.gui.save_figure_d(
+                self._data_files_dir + ('figure_d_itr_%02d.png' % itr)
+            )
         if 'no_sample_logging' in self._hyperparams['common']:
             return
         self.data_logger.pickle(
@@ -296,7 +301,7 @@ def main():
                         help='run target setup')
     parser.add_argument('-r', '--resume', metavar='N', type=int,
                         help='resume training from iter N')
-    parser.add_argument('-d', '--demo',metavar='N',type=int,
+    parser.add_argument('-d', '--demo',action='store_true',
                         help='demo the final policy without exploration') # - shahbaz
     parser.add_argument('-p', '--policy', metavar='N', type=int,
                         help='take N policy samples (for BADMM/MDGPS only)')
@@ -404,13 +409,25 @@ def main():
         seed = hyperparams.config.get('random_seed', 0)
         random.seed(seed)
         np.random.seed(seed)
+        
+        '''
+        comment out the below block if the data_files folder in the current 
+        experiment folder is empty - shahbaz
+        '''
+              
         exploration_off=False # - shahbaz
 
         gps = GPSMain(hyperparams.config, args.quit)
         
-        if (args.demo):
-            resume_training_itr=hyperparams.config['iterations']-2 # - shahbaz
+        if (args.demo): # - shahbaz
             exploration_off=True
+            data_files_dir = exp_dir + 'data_files/'
+            data_filenames = os.listdir(data_files_dir)
+            algorithm_prefix = 'algorithm_itr_'
+            algorithm_filenames = [f for f in data_filenames if f.startswith(algorithm_prefix)]
+            current_algorithm = sorted(algorithm_filenames, reverse=True)[0]
+            resume_training_itr = int(current_algorithm[len(algorithm_prefix):len(algorithm_prefix)+2])-1
+#            resume_training_itr = 8
             
         if hyperparams.config['gui_on']:
             run_gps = threading.Thread(
