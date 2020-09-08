@@ -120,9 +120,12 @@ class AgentMuJoCo(Agent):
             noise = generate_noise(self.T, self.dU, self._hyperparams)
         else:
             noise = np.zeros((self.T, self.dU))
+        # if np.any(self._hyperparams['x0var'][condition] > 0): # TODO: altered
+        #     x0n = self._hyperparams['x0var'] * \
+        #             np.random.randn(self._hyperparams['x0var'].shape)
         if np.any(self._hyperparams['x0var'][condition] > 0):
-            x0n = self._hyperparams['x0var'] * \
-                    np.random.randn(self._hyperparams['x0var'].shape)
+            x0n = self._hyperparams['x0var'][condition] * \
+                    np.random.randn((self._hyperparams['x0var'][condition]).shape[0])
             mj_X += x0n
         noisy_body_idx = self._hyperparams['noisy_body_idx'][condition]
         if noisy_body_idx.size > 0:

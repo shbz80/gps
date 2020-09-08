@@ -10,7 +10,7 @@ space.
 // Superclass.
 #include "gps_agent_pkg/controller.h"
 #include "gps/proto/gps.pb.h"
-
+#define ANGLE 0.05
 namespace gps_control
 {
 
@@ -34,6 +34,8 @@ private:
     Eigen::VectorXd temp_angles_;
     // Current target (joint space).
     Eigen::VectorXd target_angles_;
+    Eigen::VectorXd dest_angles_;
+
     // Current target (task space).
     Eigen::VectorXd target_pose_;
     // Latest joint angles.

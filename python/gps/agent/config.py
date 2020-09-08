@@ -37,22 +37,93 @@ try:
         'relax_command_topic': 'gps_controller_relax_command',
         'data_request_topic': 'gps_controller_data_request',
         'sample_result_topic': 'gps_controller_report',
-        'trial_timeout': 20,  # Give this many seconds for a trial.
+        'trial_timeout': 50,  # Give this many seconds for a trial.
         'reset_conditions': [],  # Defines reset modes + positions for
                                  # trial and auxiliary arms.
         'frequency': 20,
         'end_effector_points': np.array([]),
         #TODO: Actually pass in low gains and high gains and use both
         #      for the position controller.
+        # 'pid_params': np.array([
+        #    2400.0, 0.0, 18.0, 4.0,
+        #    1200.0, 0.0, 20.0, 4.0,
+        #    1000.0, 0.0, 6.0, 4.0,
+        #    700.0, 0.0, 4.0, 4.0,
+        #    300.0, 0.0, 6.0, 2.0,
+        #    300.0, 0.0, 4.0, 2.0,
+        #    300.0, 0.0, 2.0, 2.0
+        # ]),
+        # gains for KTH yumi gazebo model with wrong model params
+        # 'pid_params': np.array([
+        #     150.0, 0.0, 40.0, 4.0,
+        #     75.0, 0.0, 40.0, 4.0,
+        #     62.0, 0.0, 20.0, 4.0,
+        #     54.0, 0.0, 16.0, 4.0,
+        #     18.0, 0.0, 12.0, 2.0,
+        #     18.0, 0.0, 12.0, 2.0,
+        #     18.0, 0.0, 12.0, 2.0
+        # ]),
+        # first attempt for yumi
+        # 'pid_params': np.array([
+        #     2.0, 1.2, 0.4, 2.0,
+        #     2.0, 1.2, 0.4, 2.0,
+        #     1.8, 1.0, 0.3, 1.5,
+        #     1.5, 0.8, .2, 1.0,
+        #     0.5, 0.5, 0.1, .5,
+        #     0.5, 0.5, 0.1, .5,
+        #     0.5, 0.3, 0.1, .5
+        # ]),
+        # high speed for yumi reset
+        # 'pid_params': np.array([
+        #     13., 1.5, 2.0, 2.0,
+        #     12., 1.5, 2.0, 2.0,
+        #     9, 1.0, 1.8, 1.5,
+        #     6.0, 1., 1.2, 1.0,
+        #     2.0, 0.4, 0.3, .5,
+        #     2.0, 0.35, 0.3, .5,
+        #     1.5, 0.2, 0.3, .5
+        # ]),
+        # oscillations when static fric compensation is active
+        # slow convergence for tighter error bounds
+        # 'pid_params': np.array([
+        #     10., 1.5, 2.0, 2.0,
+        #     8., 1.5, 2.0, 2.0,
+        #     7, 1.0, 1.8, 1.5,
+        #     5.0, 1., 1.2, 1.0,
+        #     2.0, 0.4, 0.3, .5,
+        #     2.0, 0.35, 0.3, .5,
+        #     1.5, 0.2, 0.3, .5
+        # ]),
+        # inceasing PI values for tighter error bounds
+        # 'pid_params': np.array([
+        #     15., 3., 2.0, 2.0,
+        #     15., 3., 2.0, 2.0,
+        #     13., 2.0, 1.8, 1.5,
+        #     11.0, 2., 1.2, 1.0,
+        #     3.0, 1., 0.3, .5,
+        #     3.0, 1., 0.3, .5,
+        #     2.0, 1., 0.3, .5
+        # ]),
+        # inceasing PI values for tighter error bounds after poscontrol mod
         'pid_params': np.array([
-            2400.0, 0.0, 18.0, 4.0,
-            1200.0, 0.0, 20.0, 4.0,
-            1000.0, 0.0, 6.0, 4.0,
-            700.0, 0.0, 4.0, 4.0,
-            300.0, 0.0, 6.0, 2.0,
-            300.0, 0.0, 4.0, 2.0,
-            300.0, 0.0, 2.0, 2.0
-        ]),
+            15., 5., 1.5, 2.0,
+            15., 5., 1.5, 2.0,
+            8., 3.0, 1., 1.5,
+            8.0, 3., 1., 1.0,
+            1.0, .5, 0.2, .5,
+            1.0, .5, 0.2, .5,
+            1., .5, 0.15, .25
+        ])*2.0,
+        # with dither
+        # 'pid_params': np.array([
+        #     12., 3., 2.0, 2.0,
+        #     12., 3., 2.0, 2.0,
+        #     10., 2.0, 1.8, 1.5,
+        #     10.0, 2., 1.2, 1.0,
+        #     3.0, 1., 0.3, .5,
+        #     3.0, 1., 0.3, .5,
+        #     2.0, 1., 0.3, .5
+        # ]),
     }
 except ImportError as e:
     AGENT_ROS = {}

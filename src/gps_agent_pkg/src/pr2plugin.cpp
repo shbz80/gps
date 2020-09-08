@@ -235,4 +235,3 @@ void GPSPR2Plugin::get_joint_encoder_readings(Eigen::VectorXd &angles, gps::Actu
 PLUGINLIB_DECLARE_CLASS(gps_agent_pkg, GPSPR2Plugin,
 						gps_control::GPSPR2Plugin,
 						pr2_controller_interface::Controller)
-

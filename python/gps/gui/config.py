@@ -103,7 +103,7 @@ config = {
     'target_output_fontsize': 10,
 
     # GPS Training
-#    'initial_mode': 'wait', - shahbaz
+    # 'initial_mode': 'wait', #- shahbaz
     'initial_mode': 'run',
     'algthm_output_fontsize': 10,
     'algthm_output_max_display_size': 15,
@@ -130,10 +130,10 @@ def generate_experiment_info(config):
                     map(lambda cost: cost['type'].__name__,
                         algorithm['cost']['costs']))
 
-    if 'dynamics' in algorithm:        
+    if 'dynamics' in algorithm:
         alg_dyn = str(algorithm['dynamics']['type'].__name__)
     else:
-        alg_dyn = 'None'       
+        alg_dyn = 'None'
 
     return (
         'exp_name:   ' + str(common['experiment_name'])              + '\n' +

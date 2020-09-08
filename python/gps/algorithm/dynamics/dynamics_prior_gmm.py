@@ -75,23 +75,34 @@ class DynamicsPriorGMM(object):
             self.U = np.concatenate([self.U, U], axis=0)
 
         # Remove excess samples from dataset.
-        start = max(0, self.X.shape[0] - self._max_samples + 1)
+        # start = max(0, self.X.shape[0] - self._max_samples + 1) # original
+        start = max(0, self.X.shape[0] - self._max_samples)
         self.X = self.X[start:, :]
         self.U = self.U[start:, :]
 
         # Compute cluster dimensionality.
         Do = X.shape[2] + U.shape[2] + X.shape[2]  #TODO: Use Xtgt.
 
-        # Create dataset.
-        N = self.X.shape[0]
+        N = self.X.shape[0] # total number of samples
+        # Create dataset. original
+        # print self.X[:, :T, :].shape
+        # print self.U[:, :T, :].shape
+        # print np.c_[self.X[:, :T, :], self.U[:, :T, :]].shape
         xux = np.reshape(
             np.c_[self.X[:, :T, :], self.U[:, :T, :], self.X[:, 1:(T+1), :]],
             [T * N, Do]
         )
+        # Create dataset. delat x(t+1) instead of  x(t+1)
 
-        # Choose number of clusters.
+        # xux = np.reshape(
+        #     np.c_[self.X[:, :T, :], self.U[:, :T, :], self.X[:, 1:(T+1), :]-self.X[:, :T, :]],
+        #     [T * N, Do]
+        # )
+        # Choose number of clusters. Roughly one cluster for 40 data points, but
+        # limited to 20 clusters, but not less than 2 clusters
         K = int(max(2, min(self._max_clusters,
                            np.floor(float(N * T) / self._min_samp))))
+
         LOGGER.debug('Generating %d clusters for dynamics GMM.', K)
 
         # Update GMM.

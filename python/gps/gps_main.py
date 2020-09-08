@@ -44,11 +44,14 @@ class GPSMain(object):
 
         self._data_files_dir = config['common']['data_files_dir']
 
+        # construct agent object
         self.agent = config['agent']['type'](config['agent'])
         self.data_logger = DataLogger()
         self.gui = GPSTrainingGUI(config['common']) if config['gui_on'] else None
 
         config['algorithm']['agent'] = self.agent
+
+        # constructs the algorithm object
         self.algorithm = config['algorithm']['type'](config['algorithm'])
 
     def run(self, itr_load=None, exploration_off=False):
@@ -66,7 +69,7 @@ class GPSMain(object):
                 for cond in self._train_idx:
                     for i in range(self._hyperparams['num_samples']):
                         self._take_sample(itr, cond, i, exploration_off)
-
+                # prepare a list of samples
                 traj_sample_lists = [
                     self.agent.get_samples(cond, -self._hyperparams['num_samples'])
                     for cond in self._train_idx
@@ -74,7 +77,7 @@ class GPSMain(object):
 
                 # Clear agent samples.
                 self.agent.clear_samples()
-
+                # take one iteration with the set of samples
                 self._take_iteration(itr, traj_sample_lists)
                 pol_sample_lists = self._take_policy_samples()
                 self._log_data(itr, traj_sample_lists, pol_sample_lists)
@@ -162,11 +165,12 @@ class GPSMain(object):
             noisy=False
         else:
             noisy=True
-            
+
         if self.algorithm._hyperparams['sample_on_policy'] \
                 and self.algorithm.iteration_count > 0:
             pol = self.algorithm.policy_opt.policy
         else:
+            # this returns the first linear Gaussian policy
             pol = self.algorithm.cur[cond].traj_distr
         if self.gui:
             self.gui.set_image_overlays(cond)   # Must call for each new cond.
@@ -190,6 +194,7 @@ class GPSMain(object):
                     'Sampling: iteration %d, condition %d, sample %d.' %
                     (itr, cond, i)
                 )
+                # this appends the new sample to self._samples[]
                 self.agent.sample(
                     pol, cond,
                     verbose=(i < self._hyperparams['verbose_trials']),
@@ -388,7 +393,7 @@ def main():
         algorithm_filenames = [f for f in data_filenames if f.startswith(algorithm_prefix)]
         current_algorithm = sorted(algorithm_filenames, reverse=True)[0]
         current_itr = int(current_algorithm[len(algorithm_prefix):len(algorithm_prefix)+2])
-
+        # current_itr =
         gps = GPSMain(hyperparams.config)
         if hyperparams.config['gui_on']:
             test_policy = threading.Thread(
@@ -405,20 +410,20 @@ def main():
         import random
         import numpy as np
         import matplotlib.pyplot as plt
-        
+
         seed = hyperparams.config.get('random_seed', 0)
         random.seed(seed)
         np.random.seed(seed)
-        
+
         '''
-        comment out the below block if the data_files folder in the current 
+        comment out the below block if the data_files folder in the current
         experiment folder is empty - shahbaz
         '''
-              
+
         exploration_off=False # - shahbaz
 
         gps = GPSMain(hyperparams.config, args.quit)
-        
+
         if (args.demo): # - shahbaz
             exploration_off=True
             data_files_dir = exp_dir + 'data_files/'
@@ -427,8 +432,8 @@ def main():
             algorithm_filenames = [f for f in data_filenames if f.startswith(algorithm_prefix)]
             current_algorithm = sorted(algorithm_filenames, reverse=True)[0]
             resume_training_itr = int(current_algorithm[len(algorithm_prefix):len(algorithm_prefix)+2])-1
-#            resume_training_itr = 8
-            
+            #resume_training_itr = 32
+
         if hyperparams.config['gui_on']:
             run_gps = threading.Thread(
                 target=lambda: gps.run(itr_load=resume_training_itr, exploration_off=exploration_off)

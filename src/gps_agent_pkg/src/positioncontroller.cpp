@@ -29,6 +29,8 @@ PositionController::PositionController(ros::NodeHandle& n, gps::ActuatorType arm
 
     // Initialize target angle and position.
     target_angles_.resize(size);
+    dest_angles_.resize(size);
+
     target_pose_.resize(size);
 
     // Initialize joints temporary storage.
@@ -96,6 +98,12 @@ void PositionController::update(RobotPlugin *plugin, ros::Time current_time, boo
     // If we're doing any kind of control at all, compute torques now.
     if (mode_ != gps::NO_CONTROL)
     {
+        // computer current angle to dest. This is added to slow down the speed
+        temp_angles_ = dest_angles_ - current_angles_;
+        for(int i=0;i<7;i++){
+          target_angles_(i) = std::min(std::abs(temp_angles_(i)),ANGLE)*((temp_angles_(i) >= 0.0) ? 1.0 : -1.0) + current_angles_(i);
+        }
+
         // Compute error.
         temp_angles_ = current_angles_ - target_angles_;
 
@@ -112,10 +120,12 @@ void PositionController::update(RobotPlugin *plugin, ros::Time current_time, boo
             }
         }
 
-        // Compute torques.
-        torques = -((pd_gains_p_.array() * temp_angles_.array()) +
-                    (pd_gains_d_.array() * current_angle_velocities_.array()) +
-                    (pd_gains_i_.array() * pd_integral_.array())).matrix();
+          // Compute torques.
+          torques = -((pd_gains_p_.array() * temp_angles_.array()) +
+                      (pd_gains_d_.array() * current_angle_velocities_.array()) +
+                      (pd_gains_i_.array() * pd_integral_.array())).matrix();
+
+
     }
     else
     {
@@ -133,9 +143,12 @@ void PositionController::configure_controller(OptionsMap &options)
     // needs to report when finished
     report_waiting = true;
     mode_ = (gps::PositionControlMode) boost::get<int>(options["mode"]);
+    //ROS_DEBUG_STREAM("mode: "<<mode_);
     if (mode_ != gps::NO_CONTROL){
         Eigen::VectorXd data = boost::get<Eigen::VectorXd>(options["data"]);
+        //ROS_INFO_STREAM("target angles: "<<data);
         Eigen::MatrixXd pd_gains = boost::get<Eigen::MatrixXd>(options["pd_gains"]);
+        //ROS_DEBUG_STREAM("pid gains: "<<pd_gains);
         for(int i=0; i<pd_gains.rows(); i++){
             pd_gains_p_(i) = pd_gains(i, 0);
             pd_gains_i_(i) = pd_gains(i, 1);
@@ -143,7 +156,8 @@ void PositionController::configure_controller(OptionsMap &options)
             i_clamp_(i) = pd_gains(i, 3);
         }
         if(mode_ == gps::JOINT_SPACE){
-            target_angles_ = data;
+            // target_angles_ = data;
+            dest_angles_ = data;
         }else{
             ROS_ERROR("Unimplemented position control mode!");
         }
@@ -155,10 +169,15 @@ bool PositionController::is_finished() const
 {
     // Check whether we are close enough to the current target.
     if (mode_ == gps::JOINT_SPACE){
-        double epspos = 0.185;
-        double epsvel = 0.01;
-        double error = (current_angles_ - target_angles_).norm();
+        // double epspos = 0.015;
+        // double epspos = 0.0075;
+        double epspos = 0.01;
+        double epsvel = 0.075; // TODO: restore this
+        // double epsvel = 0.1;
+        // double error = (current_angles_ - target_angles_).norm();
+        double error = (current_angles_ - dest_angles_).norm();
         double vel = current_angle_velocities_.norm();
+        ROS_INFO_STREAM_THROTTLE(1,"pos error:"<<error<<"vel:"<<vel);
         return (error < epspos && vel < epsvel);
     }
     else if (mode_ == gps::NO_CONTROL){
@@ -175,4 +194,3 @@ void PositionController::reset(ros::Time time)
     // Clear update time.
     last_update_time_ = ros::Time(0.0);
 }
-

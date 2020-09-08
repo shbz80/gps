@@ -58,10 +58,15 @@ void EncoderSensor::update(RobotPlugin *plugin, ros::Time current_time, bool is_
 {
     double update_time = current_time.toSec() - previous_angles_time_.toSec();
 
+    //REMOVE
+    //Eigen::VectorXd temp_temp_joint_angles_, err_temp_joint_angles;
     // Get new vector of joint angles from plugin.
     plugin->get_joint_encoder_readings(temp_joint_angles_, actuator_type_);
+    // temp_temp_joint_angles_ = temp_joint_angles_;
     joint_filter_->update(update_time, temp_joint_angles_);
-
+    // joint_filter_->get_state(temp_joint_angles_);
+    // err_temp_joint_angles = temp_temp_joint_angles_ - temp_joint_angles_;
+    // ROS_DEBUG_STREAM_NAMED("ekf_filt_pos_error",err_temp_joint_angles);
     if (is_controller_step)
     {
         // Get filtered joint angles

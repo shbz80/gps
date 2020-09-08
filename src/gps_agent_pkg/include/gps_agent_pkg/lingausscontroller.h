@@ -1,3 +1,4 @@
+// this is the modified file of the original gps code for model learning exp
 /*
 Controller that executes a trial using a time-varying linear-Gaussian
 control law.
@@ -17,6 +18,11 @@ namespace gps_control
 class LinearGaussianController : public TrialController
 {
 private:
+    std::vector<Eigen::MatrixXd> init_q;
+    std::vector<Eigen::MatrixXd> init_q_d;
+    float dt;
+
+
     // Linear feedbacks.
     std::vector<Eigen::MatrixXd> K_;
 

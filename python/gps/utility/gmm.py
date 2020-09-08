@@ -123,6 +123,7 @@ class GMM(object):
         Do = data.shape[1]
 
         LOGGER.debug('Fitting GMM with %d clusters on %d points', K, N)
+        # print('Fitting GMM with %d clusters on %d points', K, N)
 
         if (not self.warmstart or self.sigma is None or
                 K != self.sigma.shape[0]):
@@ -133,6 +134,9 @@ class GMM(object):
             self.logmass = np.log(1.0 / K) * np.ones((K, 1))
             self.mass = (1.0 / K) * np.ones((K, 1))
             self.N = data.shape[0]
+            self.w = np.zeros((N,K))
+            self.wn = np.zeros((N,K))
+            self.ll = 0.
             N = self.N
 
             # Set initial cluster indices.
@@ -146,7 +150,9 @@ class GMM(object):
                 cluster_idx = (cidx == i)[0]
                 mu = np.mean(data[cluster_idx, :], axis=0)
                 diff = (data[cluster_idx, :] - mu).T
-                sigma = (1.0 / K) * (diff.dot(diff.T))
+                n = diff.shape[1]
+                # sigma = (1.0 / K) * (diff.dot(diff.T)) # original
+                sigma = (1.0 / n) * (diff.dot(diff.T))
                 self.mu[i, :] = mu
                 self.sigma[i, :, :] = sigma + np.eye(Do) * 2e-6
 
@@ -157,16 +163,24 @@ class GMM(object):
 
             # Compute log-likelihood.
             ll = np.sum(logsum(logobs, axis=1))
+            self.ll = ll
             LOGGER.debug('GMM itr %d/%d. Log likelihood: %f',
                          itr, max_iterations, ll)
+            # print('GMM itr %d/%d. Log likelihood: %f',
+            #             itr, max_iterations, ll)
             if ll < prevll:
                 # TODO: Why does log-likelihood decrease sometimes?
                 LOGGER.debug('Log-likelihood decreased! Ending on itr=%d/%d',
                              itr, max_iterations)
+                # print('Log-likelihood decreased! Ending on itr=%d/%d',
+                #              itr, max_iterations)
                 break
-            if np.abs(ll-prevll) < 1e-5*prevll:
+            # if np.abs(ll-prevll) < 1e-5*prevll: # original
+            if np.abs(ll-prevll) < np.abs(1e-6*prevll):
                 LOGGER.debug('GMM converged on itr=%d/%d',
                              itr, max_iterations)
+                # print('GMM converged on itr=%d/%d',
+                #              itr, max_iterations)
                 break
             prevll = ll
 
@@ -178,7 +192,8 @@ class GMM(object):
             logwn = logw - logsum(logw, axis=0)
             assert logwn.shape == (N, K)
             w = np.exp(logwn)
-
+            self.w = np.exp(logw)
+            self.wn = w
             # M-step: update clusters.
             # Fit cluster mass.
             self.logmass = logsum(logw, axis=0).T

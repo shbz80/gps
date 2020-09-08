@@ -43,6 +43,7 @@ rosbuild_add_boost_directories()
 
 set(DDP_FILES src/robotplugin.cpp
               src/pr2plugin.cpp
+              src/yumiplugin.cpp
               src/sample.cpp
               src/sensor.cpp
               src/neuralnetwork.cpp
@@ -54,7 +55,8 @@ set(DDP_FILES src/robotplugin.cpp
               src/trialcontroller.cpp
               src/encodersensor.cpp
               src/encoderfilter.cpp
-	      src/rostopicsensor.cpp
+	            src/rostopicsensor.cpp
+              src/kdlchain.cpp
               src/util.cpp)
 
 # Include Caffe

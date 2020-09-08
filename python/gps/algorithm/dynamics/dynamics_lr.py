@@ -24,7 +24,9 @@ class DynamicsLR(Dynamics):
     def fit(self, X, U):
         """ Fit dynamics. """
         N, T, dX = X.shape
+        # print "X.shape",X.shape
         dU = U.shape[2]
+        # print "U.shape",U.shape
 
         if N == 1:
             raise ValueError("Cannot fit dynamics on 1 sample")
@@ -41,11 +43,10 @@ class DynamicsLR(Dynamics):
             xux_mean = np.mean(xux, axis=0)
             empsig = (xux - xux_mean).T.dot(xux - xux_mean) / N
             sigma = 0.5 * (empsig + empsig.T)
-            sigma[it, it] += self._hyperparams['regularization']
-
+            # sigma[it, it] += self._hyperparams['regularization']
+            sigma[it, it] += np.identity(sigma[it, it].shape[0])*self._hyperparams['regularization']
             Fm = np.linalg.solve(sigma[it, it], sigma[it, ip]).T
             fv = xux_mean[ip] - Fm.dot(xux_mean[it])
-
             self.Fm[t, :, :] = Fm
             self.fv[t, :] = fv
 

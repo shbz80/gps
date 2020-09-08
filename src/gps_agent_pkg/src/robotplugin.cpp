@@ -243,6 +243,7 @@ void RobotPlugin::update_controllers(ros::Time current_time, bool is_controller_
         {
             //sensors_[sensor]->set_update(active_arm_controller_->get_update_delay());
         }
+        ROS_INFO_STREAM("Set the active arm controller to NO_CONTROL");
     }
     if (active_arm_controller_->report_waiting){
         if (active_arm_controller_->is_finished()){
@@ -428,7 +429,7 @@ void RobotPlugin::trial_subscriber_callback(const gps_agent_pkg::TrialCommand::C
             }
             controller_params["noise_"+to_string(t)] = noise;
         }
- 
+
         controller_params["net_param"] = params.net_param;
         controller_params["scale"] = scale;
         controller_params["bias"] = bias;

@@ -13,10 +13,13 @@ def init_lqr(hyperparams):
     Return initial gains for a time-varying linear Gaussian controller
     that tries to hold the initial position.
     """
+    print 'init lqr'
+
     config = copy.deepcopy(INIT_LG_LQR)
     config.update(hyperparams)
 
     x0, dX, dU = config['x0'], config['dX'], config['dU']
+    # print 'x0:',x0.shape,x0
     dt, T = config['dt'], config['T']
 
     #TODO: Use packing instead of assuming which indices are the joint
@@ -44,7 +47,8 @@ def init_lqr(hyperparams):
     # Set up simple linear dynamics model.
     Fd, fc = guess_dynamics(config['init_gains'], config['init_acc'],
                             dX, dU, dt)
-
+    # print 'Fd:',Fd.shape,Fd
+    # print 'fc:',fc.shape,fc
     # Setup a cost function based on stiffness.
     # Ltt = (dX+dU) by (dX+dU) - Hessian of loss with respect to
     # trajectory at a single timestep.
@@ -53,9 +57,11 @@ def init_lqr(hyperparams):
         config['stiffness'] * config['stiffness_vel'] * np.ones(dU),
         np.zeros(dX - dU*2), np.ones(dU)
     ]))
+    # print 'Ltt:',Ltt.shape,Ltt
     Ltt = Ltt / config['init_var']  # Cost function - quadratic term.
     lt = -Ltt.dot(np.r_[x0, np.zeros(dU)])  # Cost function - linear term.
-
+    # print 'Ltt:',Ltt.shape,Ltt
+    # print 'lt:',lt.shape,lt
     # Perform dynamic programming.
     K = np.zeros((T, dU, dX))  # Controller gains matrix.
     k = np.zeros((T, dU))  # Controller bias term.
@@ -112,6 +118,8 @@ def init_pd(hyperparams):
     position gains are controlled by the variable pos_gains, velocity
     gains are controlled by pos_gains*vel_gans_mult.
     """
+    print 'init pd'
+
     config = copy.deepcopy(INIT_LG_PD)
     config.update(hyperparams)
 
@@ -121,22 +129,41 @@ def init_pd(hyperparams):
     # Choose initialization mode.
     Kp = 1.0
     Kv = config['vel_gains_mult']
-    if dU < dQ:
-        K = -config['pos_gains'] * np.tile(
-            [np.eye(dU) * Kp, np.zeros((dU, dQ-dU)),
-             np.eye(dU) * Kv, np.zeros((dU, dQ-dU))],
-            [T, 1, 1]
-        )
+    if dU < dQ: #TODO: to check what is going on
+        # K = -config['pos_gains'] * np.tile(
+        #     [np.eye(dU) * Kp, np.zeros((dU, dQ-dU)),
+        #      np.eye(dU) * Kv, np.zeros((dU, dQ-dU))],
+        #     [T, 1, 1]
+        # )
+        # K = -config['pos_gains'] * np.tile(
+        #     [np.dot(np.eye(dU),Kp.T), np.zeros((dU, dQ-dU)),
+        #      np.dot(np.eye(dU),Kv.T), np.zeros((dU, dQ-dU))],
+        #     [T, 1, 1]
+        # )
+        Kp = 1.0
     else:
-        K = -config['pos_gains'] * np.tile(
+        # K = -config['pos_gains'] * np.tile(
+        #     np.hstack([
+        #         np.eye(dU) * Kp, np.eye(dU) * Kv,
+        #         np.zeros((dU, dX - dU*2))
+        #     ]), [T, 1, 1]
+        # )
+        K = -1.0 * np.tile(
             np.hstack([
-                np.eye(dU) * Kp, np.eye(dU) * Kv,
+                np.diag(config['pos_gains']), np.diag(config['vel_gains_mult']),
                 np.zeros((dU, dX - dU*2))
             ]), [T, 1, 1]
         )
+        print 'K:',K[0, :, :].shape
+        print K[0, :, :]
     k = np.tile(-K[0, :, :].dot(x0), [T, 1])
-    PSig = config['init_var'] * np.tile(np.eye(dU), [T, 1, 1])
-    cholPSig = np.sqrt(config['init_var']) * np.tile(np.eye(dU), [T, 1, 1])
-    invPSig = (1.0 / config['init_var']) * np.tile(np.eye(dU), [T, 1, 1])
+    # print 'k:', k.shape
+    # PSig = config['init_var'] * np.tile(np.eye(dU), [T, 1, 1])
+    # cholPSig = np.sqrt(config['init_var']) * np.tile(np.eye(dU), [T, 1, 1])
+    # invPSig = (1.0 / config['init_var']) * np.tile(np.eye(dU), [T, 1, 1])
+
+    PSig = np.tile(np.diag(config['exploration_noise']), [T, 1, 1])
+    cholPSig = np.tile(np.diag(np.sqrt(config['exploration_noise'])), [T, 1, 1])
+    invPSig = np.tile(np.diag(1.0 / config['exploration_noise']), [T, 1, 1])
 
     return LinearGaussianPolicy(K, k, PSig, cholPSig, invPSig)

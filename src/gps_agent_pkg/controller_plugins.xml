@@ -2,4 +2,7 @@
   <class name="gps_agent_pkg/GPSPR2Plugin"
          type="gps_control::GPSPR2Plugin"
          base_class_type="pr2_controller_interface::Controller" />
+  <class name="gps_agent_pkg/GPSYumiPlugin"
+         type="gps_control::GPSYumiPlugin"
+         base_class_type="controller_interface::ControllerBase" />
 </library>

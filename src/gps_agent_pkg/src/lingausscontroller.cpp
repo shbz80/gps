@@ -1,3 +1,4 @@
+// this is the modified file of the original gps code for model learning exp
 #include "gps_agent_pkg/robotplugin.h"
 #include "gps_agent_pkg/lingausscontroller.h"
 #include "gps_agent_pkg/util.h"
@@ -28,8 +29,17 @@ void LinearGaussianController::configure_controller(OptionsMap &options)
     //Call superclass
     TrialController::configure_controller(options);
 
+
+
+
     // TODO: Update K_
     int T = boost::get<int>(options["T"]);
+    // int Tc = T/3;
+    // init_q.resize(7);
+    // init_q = Eigen::Matrix7d (-1.366, -1.094, 1.085, 0.901, 1.999, 1.636, -2.912);
+    // init_q_d.resize(7);
+    // init_q_d = Eigen::Matrix7d (0, 0, 0, 0, 0, 0, 0);
+    // dt = 0.05;
 
     //TODO Don't do this hacky string indexing
     K_.resize(T);

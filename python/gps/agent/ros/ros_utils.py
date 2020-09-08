@@ -4,22 +4,25 @@ import numpy as np
 import rospy
 
 from gps.algorithm.policy.lin_gauss_policy import LinearGaussianPolicy
+from garage.np.policies.stable_cart_spring_damper import StableCartSpringDamperPolicy as VicPolicy
 from gps_agent_pkg.msg import ControllerParams, LinGaussParams, TfParams, CaffeParams, TfActionCommand
 from gps.sample.sample import Sample
 from gps.proto.gps_pb2 import LIN_GAUSS_CONTROLLER, CAFFE_CONTROLLER, TF_CONTROLLER
 import logging
 LOGGER = logging.getLogger(__name__)
-try:
-    from gps.algorithm.policy.caffe_policy import CaffePolicy
-    NO_CAFFE = False
-except ImportError as e:
-    NO_CAFFE = True
-    LOGGER.info("Caffe not imported")
+# try: TODO
+#     from gps.algorithm.policy.caffe_policy import CaffePolicy
+#     NO_CAFFE = False
+# except ImportError as e:
+#     NO_CAFFE = True
+#     LOGGER.info("Caffe not imported")
+CaffePolicy = None
+NO_CAFFE = True
 try:
     from gps.algorithm.policy.tf_policy import TfPolicy
 except ImportError:
     TfPolicy = None
-
+# TfPolicy = None
 
 def msg_to_sample(ros_msg, agent):
     """
@@ -62,6 +65,10 @@ def policy_to_msg(policy, noise):
             scaled_noise[i] = policy.chol_pol_covar.T.dot(noise[i])
         msg.caffe.noise = scaled_noise.reshape(-1).tolist()
     elif isinstance(policy, TfPolicy):
+        msg.controller_to_execute = TF_CONTROLLER
+        msg.tf = TfParams()
+        msg.tf.dU = policy.dU
+    elif isinstance(policy, VicPolicy):
         msg.controller_to_execute = TF_CONTROLLER
         msg.tf = TfParams()
         msg.tf.dU = policy.dU
@@ -113,12 +120,13 @@ class ServiceEmulator(object):
         if self._waiting:
             self._subscriber_msg = message
             self._waiting = False
+            # print(message)
 
     def publish(self, pub_msg):
         """ Publish a message without waiting for response. """
         self._pub.publish(pub_msg)
 
-    def publish_and_wait(self, pub_msg, timeout=5.0, poll_delay=0.01,
+    def publish_and_wait(self, pub_msg, timeout=5.0, poll_delay=0.005,
                          check_id=False):
         """
         Publish a message and wait for the response.
@@ -141,7 +149,7 @@ class ServiceEmulator(object):
         time_waited = 0
         while self._waiting:
             rospy.sleep(poll_delay)
-            time_waited += 0.01
+            time_waited += 0.005
             if time_waited > timeout:
                 raise TimeoutException(time_waited)
         return self._subscriber_msg

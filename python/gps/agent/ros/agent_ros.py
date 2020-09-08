@@ -4,7 +4,7 @@ import time
 import numpy as np
 
 import rospy
-
+import copy
 from gps.agent.agent import Agent
 from gps.agent.agent_utils import generate_noise, setup
 from gps.agent.config import AGENT_ROS
@@ -13,12 +13,13 @@ from gps.agent.ros.ros_utils import ServiceEmulator, msg_to_sample, \
 from gps.proto.gps_pb2 import TRIAL_ARM, AUXILIARY_ARM
 from gps_agent_pkg.msg import TrialCommand, SampleResult, PositionCommand, \
         RelaxCommand, DataRequest, TfActionCommand, TfObsData
+from garage.np.policies.stable_cart_spring_damper import StableCartSpringDamperPolicy as VicPolicy
+
 try:
     from gps.algorithm.policy.tf_policy import TfPolicy
 except ImportError:  # user does not have tf installed.
     TfPolicy = None
-
-
+# TfPolicy = None
 
 class AgentROS(Agent):
     """
@@ -117,14 +118,15 @@ class AgentROS(Agent):
         reset_command = PositionCommand()
         reset_command.mode = mode
         reset_command.data = data
+        # print('reset pos:', data)
         reset_command.pd_gains = self._hyperparams['pid_params']
         reset_command.arm = arm
-        timeout = self._hyperparams['trial_timeout']
+        timeout = self._hyperparams['reset_timeout']
         reset_command.id = self._get_next_seq_id()
         self._reset_service.publish_and_wait(reset_command, timeout=timeout)
         #TODO: Maybe verify that you reset to the correct position.
 
-    def reset(self, condition):
+    def reset(self, condition, policy=None):
         """
         Reset the agent for a particular experiment condition.
         Args:
@@ -133,9 +135,12 @@ class AgentROS(Agent):
         condition_data = self._hyperparams['reset_conditions'][condition]
         self.reset_arm(TRIAL_ARM, condition_data[TRIAL_ARM]['mode'],
                        condition_data[TRIAL_ARM]['data'])
-        self.reset_arm(AUXILIARY_ARM, condition_data[AUXILIARY_ARM]['mode'],
-                       condition_data[AUXILIARY_ARM]['data'])
+        # self.reset_arm(AUXILIARY_ARM, condition_data[AUXILIARY_ARM]['mode'],
+        #                condition_data[AUXILIARY_ARM]['data'])
+        if policy:
+            policy.reset()
         time.sleep(2.0)  # useful for the real robot, so it stops completely
+        print('Reset done')
 
     def sample(self, policy, condition, verbose=True, save=True, noisy=True):
         """
@@ -149,8 +154,12 @@ class AgentROS(Agent):
         Returns:
             sample: A Sample object.
         """
+        print ('Sample initiated')
         if TfPolicy is not None:  # user has tf installed.
             if isinstance(policy, TfPolicy):
+                self._init_tf(policy.dU)
+        if VicPolicy is not None:  # TODO
+            if isinstance(policy, VicPolicy):
                 self._init_tf(policy.dU)
 
         self.reset(condition)
@@ -184,10 +193,10 @@ class AgentROS(Agent):
             return sample
         else:
             self._trial_service.publish(trial_command)
-            sample_msg = self.run_trial_tf(policy, time_to_run=self._hyperparams['trial_timeout'])
-            sample = msg_to_sample(sample_msg, self)
-            if save:
-                self._samples[condition].append(sample)
+            sample = self.run_trial_tf(policy, time_to_run=self._hyperparams['trial_timeout'])
+            # sample = msg_to_sample(sample_msg, self)
+            # if save:
+            #     self._samples[condition].append(sample)
             return sample
 
     def run_trial_tf(self, policy, time_to_run=5):
@@ -196,25 +205,55 @@ class AgentROS(Agent):
         should_stop = False
         consecutive_failures = 0
         start_time = time.time()
+        s_time = time.time()
+        X = []
+        F = []
+        U = []
         while should_stop is False:
             if self.observations_stale is False:
                 consecutive_failures = 0
+                # s_time = time.time()
                 last_obs = tf_obs_msg_to_numpy(self._tf_subscriber_msg)
-                action_msg = tf_policy_to_action_msg(self.dU,
-                                                     self._get_new_action(policy, last_obs),
-                                                     self.current_action_id)
+                # s_time = time.time()
+                # print('ROS com time:',time.time() - s_time)
+                X.append(last_obs)
+                u, f = self._get_new_action(policy, last_obs)
+                # if self.current_action_id==1:
+                    # print('Initial torque', u)
+                    # print('Initial force', f)
+                F.append(f)
+                U.append(u)
+                action_msg = tf_policy_to_action_msg(self.dU, u, self.current_action_id)
+                # s_time = time.time()
+                # print('Sample time:',time.time() - s_time)
                 self._tf_publish(action_msg)
                 self.observations_stale = True
                 self.current_action_id += 1
+                # print('Current action id',self.current_action_id)
             else:
-                rospy.sleep(0.01)
+                rospy.sleep(0.005)
                 consecutive_failures += 1
+                # if time.time() - start_time <= time_to_run and consecutive_failures > 5 and self.current_action_id>1 and self.current_action_id<=self.T:
+                #     print('Obs lost. Filling the missing with last')
+                #     print('current_action_id', self.current_action_id)
+                #     F.append(copy.copy(F[-1]))
+                #     X.append(copy.copy(X[-1]))
+                #     U.append(copy.copy(U[-1]))
+                #     should_stop = False
                 if time.time() - start_time > time_to_run and consecutive_failures > 5:
                     # we only stop when we have run for the trial time and are no longer receiving obs.
                     should_stop = True
+                # else:
+                #     should_stop = False
         rospy.sleep(0.25)  # wait for finished trial to come in.
-        result = self._trial_service._subscriber_msg
-        return result  # the trial has completed. Here is its message.
+        path = {}
+        path['observations'] = np.array(X)
+        path['actions'] = np.array(U)
+        path['agent_infos'] = {}
+        path['agent_infos']['mean'] = np.array(F)
+        print('Samle with size', len(X))
+        # result = self._trial_service._subscriber_msg
+        return path  # the trial has completed. Here is its message.
 
     def _get_new_action(self, policy, obs):
         return policy.act(None, obs, None, None)
