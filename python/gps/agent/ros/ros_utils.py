@@ -3,26 +3,12 @@ import numpy as np
 
 import rospy
 
-from gps.algorithm.policy.lin_gauss_policy import LinearGaussianPolicy
-from garage.np.policies.stable_cart_spring_damper import StableCartSpringDamperPolicy as VicPolicy
-from gps_agent_pkg.msg import ControllerParams, LinGaussParams, TfParams, CaffeParams, TfActionCommand
+from gps_agent_pkg.msg import ControllerParams, TfParams, TfActionCommand
 from gps.sample.sample import Sample
-from gps.proto.gps_pb2 import LIN_GAUSS_CONTROLLER, CAFFE_CONTROLLER, TF_CONTROLLER
+from gps.proto.gps_pb2 import TF_CONTROLLER
 import logging
 LOGGER = logging.getLogger(__name__)
-# try: TODO
-#     from gps.algorithm.policy.caffe_policy import CaffePolicy
-#     NO_CAFFE = False
-# except ImportError as e:
-#     NO_CAFFE = True
-#     LOGGER.info("Caffe not imported")
-CaffePolicy = None
-NO_CAFFE = True
-try:
-    from gps.algorithm.policy.tf_policy import TfPolicy
-except ImportError:
-    TfPolicy = None
-# TfPolicy = None
+
 
 def msg_to_sample(ros_msg, agent):
     """
@@ -42,38 +28,9 @@ def policy_to_msg(policy, noise):
     Convert a policy object to a ROS ControllerParams message.
     """
     msg = ControllerParams()
-    if isinstance(policy, LinearGaussianPolicy):
-        msg.controller_to_execute = LIN_GAUSS_CONTROLLER
-        msg.lingauss = LinGaussParams()
-        msg.lingauss.dX = policy.dX
-        msg.lingauss.dU = policy.dU
-        msg.lingauss.K_t = \
-                policy.K.reshape(policy.T * policy.dX * policy.dU).tolist()
-        msg.lingauss.k_t = \
-                policy.fold_k(noise).reshape(policy.T * policy.dU).tolist()
-    elif NO_CAFFE is False and isinstance(policy, CaffePolicy):
-        msg.controller_to_execute = CAFFE_CONTROLLER
-        msg.caffe = CaffeParams()
-        msg.caffe.net_param = policy.get_net_param()
-        msg.caffe.bias = policy.bias.tolist()
-        msg.caffe.dU = policy.dU
-        scale_shape = policy.scale.shape
-        msg.caffe.scale = policy.scale.reshape(scale_shape[0] * scale_shape[1]).tolist()
-        msg.caffe.dim_bias = scale_shape[0]
-        scaled_noise = np.zeros_like(noise)
-        for i in range(noise.shape[0]):
-            scaled_noise[i] = policy.chol_pol_covar.T.dot(noise[i])
-        msg.caffe.noise = scaled_noise.reshape(-1).tolist()
-    elif isinstance(policy, TfPolicy):
-        msg.controller_to_execute = TF_CONTROLLER
-        msg.tf = TfParams()
-        msg.tf.dU = policy.dU
-    elif isinstance(policy, VicPolicy):
-        msg.controller_to_execute = TF_CONTROLLER
-        msg.tf = TfParams()
-        msg.tf.dU = policy.dU
-    else:
-        raise NotImplementedError("Caffe not imported or Unknown policy object: %s" % policy)
+    msg.controller_to_execute = TF_CONTROLLER
+    msg.tf = TfParams()
+    msg.tf.dU = policy.dU
     return msg
 
 
@@ -110,13 +67,14 @@ class ServiceEmulator(object):
         sub_type: Subscriber message type.
     """
     def __init__(self, pub_topic, pub_type, sub_topic, sub_type):
-        self._pub = rospy.Publisher(pub_topic, pub_type)
+        self._pub = rospy.Publisher(pub_topic, pub_type, queue_size=1)
         self._sub = rospy.Subscriber(sub_topic, sub_type, self._callback)
 
         self._waiting = False
         self._subscriber_msg = None
 
     def _callback(self, message):
+        print('call_back_recieved')
         if self._waiting:
             self._subscriber_msg = message
             self._waiting = False

@@ -2,8 +2,11 @@
 import copy
 import time
 import numpy as np
-
+# import sys
+# rospy_path = '/opt/ros/kinetic/lib/python2.7/dist-packages'
+# sys.path.append(rospy_path)
 import rospy
+# del sys.path[-1]
 import copy
 from gps.agent.agent import Agent
 from gps.agent.agent_utils import generate_noise, setup
@@ -13,13 +16,11 @@ from gps.agent.ros.ros_utils import ServiceEmulator, msg_to_sample, \
 from gps.proto.gps_pb2 import TRIAL_ARM, AUXILIARY_ARM
 from gps_agent_pkg.msg import TrialCommand, SampleResult, PositionCommand, \
         RelaxCommand, DataRequest, TfActionCommand, TfObsData
-from garage.np.policies.stable_cart_spring_damper import StableCartSpringDamperPolicy as VicPolicy
 
 try:
     from gps.algorithm.policy.tf_policy import TfPolicy
 except ImportError:  # user does not have tf installed.
     TfPolicy = None
-# TfPolicy = None
 
 class AgentROS(Agent):
     """
@@ -155,12 +156,7 @@ class AgentROS(Agent):
             sample: A Sample object.
         """
         print ('Sample initiated')
-        if TfPolicy is not None:  # user has tf installed.
-            if isinstance(policy, TfPolicy):
-                self._init_tf(policy.dU)
-        if VicPolicy is not None:  # TODO
-            if isinstance(policy, VicPolicy):
-                self._init_tf(policy.dU)
+        self._init_tf(policy.dU)
 
         self.reset(condition)
         # Generate noise.

@@ -157,7 +157,7 @@ void KdlChain::setEfforts(KDL::JntArray& a)
 {
   assert(a.rows() == joints_.size());
   for (unsigned int i = 0; i < joints_.size(); ++i)
-    //joints_[i]->commanded_effort_ = a(i);
+    // joints_[i]->commanded_effort_ = a(i);
     joints_[i].setCommand(a(i)); // TODO: not sure about this
 }
 
@@ -165,7 +165,7 @@ void KdlChain::addEfforts(KDL::JntArray& a)
 {
   assert(a.rows() == joints_.size());
   for (unsigned int i = 0; i < joints_.size(); ++i)
-    //joints_[i]->commanded_effort_ += a(i);
+    // joints_[i]->commanded_effort_ += a(i);
     joints_[i].setCommand(joints_[i].getEffort() + a(i)); // TODO: not sure about this
 }
 

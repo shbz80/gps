@@ -78,6 +78,7 @@ void RobotPlugin::initialize_ros(ros::NodeHandle& n)
 // Initialize all sensors.
 void RobotPlugin::initialize_sensors(ros::NodeHandle& n)
 {
+    ROS_INFO_STREAM("Init sensors");
     // Clear out the old sensors.
     sensors_.clear();
 
@@ -147,7 +148,7 @@ void RobotPlugin::initialize_position_controllers(ros::NodeHandle& n)
     active_arm_controller_.reset(new PositionController(n, gps::TRIAL_ARM, 7));
 }
 
-// Helper function to initialize a sample from the current sensors.
+// // Helper function to initialize a sample from the current sensors.
 void RobotPlugin::initialize_sample(boost::scoped_ptr<Sample>& sample, gps::ActuatorType actuator_type)
 {
     // Go through all of the sensors and initialize metadata.
@@ -292,7 +293,7 @@ void RobotPlugin::publish_sample_report(boost::scoped_ptr<Sample>& sample, int T
     }
     report_publisher_->unlockAndPublish();
 }
-
+//
 void RobotPlugin::position_subscriber_callback(const gps_agent_pkg::PositionCommand::ConstPtr& msg){
 
     ROS_INFO_STREAM("received position command");
@@ -323,7 +324,7 @@ void RobotPlugin::position_subscriber_callback(const gps_agent_pkg::PositionComm
         ROS_ERROR("Unknown position controller arm type");
     }
 }
-
+//
 void RobotPlugin::trial_subscriber_callback(const gps_agent_pkg::TrialCommand::ConstPtr& msg){
 
     OptionsMap controller_params;
@@ -484,11 +485,11 @@ void RobotPlugin::trial_subscriber_callback(const gps_agent_pkg::TrialCommand::C
 
     controller_initialized_ = true;
 }
-
+//
 void RobotPlugin::test_callback(const std_msgs::Empty::ConstPtr& msg){
     ROS_INFO_STREAM("Received test message");
 }
-
+//
 void RobotPlugin::relax_subscriber_callback(const gps_agent_pkg::RelaxCommand::ConstPtr& msg){
 
     ROS_INFO_STREAM("received relax command");
@@ -504,7 +505,7 @@ void RobotPlugin::relax_subscriber_callback(const gps_agent_pkg::RelaxCommand::C
         ROS_ERROR("Unknown position controller arm type");
     }
 }
-
+//
 void RobotPlugin::data_request_subscriber_callback(const gps_agent_pkg::DataRequest::ConstPtr& msg) {
     ROS_INFO_STREAM("received data request");
     OptionsMap params;
@@ -543,24 +544,24 @@ Sensor *RobotPlugin::get_sensor(SensorType sensor, gps::ActuatorType actuator_ty
     }
 }
 
-// Get forward kinematics solver.
-void RobotPlugin::get_fk_solver(boost::shared_ptr<KDL::ChainFkSolverPos> &fk_solver, boost::shared_ptr<KDL::ChainJntToJacSolver> &jac_solver, gps::ActuatorType arm)
-{
-    if (arm == gps::AUXILIARY_ARM)
-    {
-        fk_solver = passive_arm_fk_solver_;
-        jac_solver = passive_arm_jac_solver_;
-    }
-    else if (arm == gps::TRIAL_ARM)
-    {
-        fk_solver = active_arm_fk_solver_;
-        jac_solver = active_arm_jac_solver_;
-    }
-    else
-    {
-        ROS_ERROR("Unknown ArmType %i requested for joint encoder readings!",arm);
-    }
-}
+// // Get forward kinematics solver.
+// void RobotPlugin::get_fk_solver(boost::shared_ptr<KDL::ChainFkSolverPos> &fk_solver, boost::shared_ptr<KDL::ChainJntToJacSolver> &jac_solver, gps::ActuatorType arm)
+// {
+//     if (arm == gps::AUXILIARY_ARM)
+//     {
+//         fk_solver = passive_arm_fk_solver_;
+//         jac_solver = passive_arm_jac_solver_;
+//     }
+//     else if (arm == gps::TRIAL_ARM)
+//     {
+//         fk_solver = active_arm_fk_solver_;
+//         jac_solver = active_arm_jac_solver_;
+//     }
+//     else
+//     {
+//         ROS_ERROR("Unknown ArmType %i requested for joint encoder readings!",arm);
+//     }
+// }
 
 void RobotPlugin::tf_robot_action_command_callback(const gps_agent_pkg::TfActionCommand::ConstPtr& msg){
 
@@ -582,7 +583,7 @@ void RobotPlugin::tf_robot_action_command_callback(const gps_agent_pkg::TfAction
     }
 
 }
-
+//
 void RobotPlugin::tf_publish_obs(Eigen::VectorXd obs){
     while(!tf_publisher_->trylock());
     tf_publisher_->msg_.data.resize(obs.size());

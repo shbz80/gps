@@ -41,19 +41,19 @@ private:
     // Temporary storage for joint angles.
     Eigen::VectorXd temp_joint_angles_;
     // Temporary storage for KDL joint angle array.
-    KDL::JntArray temp_joint_array_;
+    // KDL::JntArray temp_joint_array_;
     // Temporary storage for KDL tip pose.
-    KDL::Frame temp_tip_pose_;
+    // KDL::Frame temp_tip_pose_;
     // Temporary storage for KDL Jacobian.
-    KDL::Jacobian temp_jacobian_;
+    // KDL::Jacobian temp_jacobian_;
     // End-effector site/point offsets
     int n_points_;
     // EE Point jacobian
     Eigen::MatrixXd point_jacobians_;
     Eigen::MatrixXd point_jacobians_rot_;
 
-    boost::shared_ptr<KDL::ChainFkSolverPos> fk_solver_;
-    boost::shared_ptr<KDL::ChainJntToJacSolver> jac_solver_;
+    // boost::shared_ptr<KDL::ChainFkSolverPos> fk_solver_;
+    // boost::shared_ptr<KDL::ChainJntToJacSolver> jac_solver_;
 
     boost::scoped_ptr<EncoderFilter> joint_filter_;
 

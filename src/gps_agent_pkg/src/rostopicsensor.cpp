@@ -1,6 +1,8 @@
 #include "gps_agent_pkg/rostopicsensor.h"
+#include <cmath>
 #include <math.h>
 
+using namespace std;
 using namespace gps_control;
 // Constructor.
 ROSTopicSensor::ROSTopicSensor(ros::NodeHandle& n, RobotPlugin *plugin): Sensor(n, plugin)
@@ -52,7 +54,7 @@ void ROSTopicSensor::configure_sensor(OptionsMap &options)
     //data_size_ = boost::get<int>(options["data_size"]); // Maybe just set this my size of first sample?
 }
 // Set data format and meta data on the provided sample.
-void ROSTopicSensor::set_sample_data_format(boost::scoped_ptr<Sample>& sample) 
+void ROSTopicSensor::set_sample_data_format(boost::scoped_ptr<Sample>& sample)
 {
     // Set image size and format.
     OptionsMap data_metadata;
@@ -60,7 +62,7 @@ void ROSTopicSensor::set_sample_data_format(boost::scoped_ptr<Sample>& sample)
     sample->set_meta_data(gps::IMAGE_FEAT,data_size_,SampleDataFormatEigenVector,data_metadata);
 }
 // Set data on the provided sample.
-void ROSTopicSensor::set_sample_data(boost::scoped_ptr<Sample>& sample, int t) 
+void ROSTopicSensor::set_sample_data(boost::scoped_ptr<Sample>& sample, int t)
 {
     sample->set_data_vector(t,gps::IMAGE_FEAT,latest_data_.data(),latest_data_.size(),SampleDataFormatEigenVector);
     // sample->set_data_vector(t,gps::JOINT_ANGLES,previous_angles_.data(),previous_angles_.size(),SampleDataFormatEigenVector);

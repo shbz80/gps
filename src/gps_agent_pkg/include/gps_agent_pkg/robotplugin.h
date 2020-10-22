@@ -61,36 +61,36 @@ protected:
     Eigen::VectorXd  passive_arm_torques_;
     // Position controller for passive arm.
     boost::scoped_ptr<PositionController> passive_arm_controller_;
-    // Position controller for active arm.
+    // // Position controller for active arm.
     boost::scoped_ptr<PositionController> active_arm_controller_;
-    // Current trial controller (if any).
+    // // Current trial controller (if any).
     boost::scoped_ptr<TrialController> trial_controller_;
-    // Sensor data for the current time step.
+    // // Sensor data for the current time step.
     boost::scoped_ptr<Sample> current_time_step_sample_;
-    // Auxiliary Sensor data for the current time step.
+    // // Auxiliary Sensor data for the current time step.
     boost::scoped_ptr<Sample> aux_current_time_step_sample_;
-    // Sensors.
+    // // Sensors.
     std::vector<boost::shared_ptr<Sensor> > sensors_;
-    // Auxiliary Sensors.
+    // // Auxiliary Sensors.
     std::vector<boost::shared_ptr<Sensor> > aux_sensors_;
-    // KDL chains for the end-effectors.
-    KDL::Chain passive_arm_fk_chain_, active_arm_fk_chain_;
-    // KDL solvers for the end-effectors.
-    boost::shared_ptr<KDL::ChainFkSolverPos> passive_arm_fk_solver_, active_arm_fk_solver_;
-    // KDL solvers for end-effector Jacobians.
-    boost::shared_ptr<KDL::ChainJntToJacSolver> passive_arm_jac_solver_, active_arm_jac_solver_;
-    // Subscribers.
-    // Subscriber for position control commands.
+    // // KDL chains for the end-effectors.
+    // KDL::Chain passive_arm_fk_chain_, active_arm_fk_chain_;
+    // // KDL solvers for the end-effectors.
+    // boost::shared_ptr<KDL::ChainFkSolverPos> passive_arm_fk_solver_, active_arm_fk_solver_;
+    // // KDL solvers for end-effector Jacobians.
+    // boost::shared_ptr<KDL::ChainJntToJacSolver> passive_arm_jac_solver_, active_arm_jac_solver_;
+    // // Subscribers.
+    // // Subscriber for position control commands.
     ros::Subscriber position_subscriber_;
-    // Subscriber trial commands.
+    // // Subscriber trial commands.
     ros::Subscriber trial_subscriber_;
     ros::Subscriber test_sub_;
-    // Subscriber for relax commands.
+    // // Subscriber for relax commands.
     ros::Subscriber relax_subscriber_;
-    // Subscriber for current state report request.
+    // // Subscriber for current state report request.
     ros::Subscriber data_request_subscriber_;
-    // Publishers.
-    // Publish result of a trial, completion of position command, or just a report.
+    // // Publishers.
+    // // Publish result of a trial, completion of position command, or just a report.
     ros_publisher_ptr(gps_agent_pkg::SampleResult) report_publisher_;
     // Is a trial arm data request pending?
     bool trial_data_request_waiting_;
@@ -100,9 +100,9 @@ protected:
     bool sensors_initialized_;
     // Is everything initialized for the trial controller?
     bool controller_initialized_;
-    //tf publisher
+    // //tf publisher
     ros_publisher_ptr(gps_agent_pkg::TfObsData) tf_publisher_;
-    //tf action subscriber
+    // //tf action subscriber
     ros::Subscriber action_subscriber_tf_;
 public:
     // Constructor (this should do nothing).
@@ -126,18 +126,18 @@ public:
     // Report publishers
     // Publish a sample with data from up to T timesteps
     virtual void publish_sample_report(boost::scoped_ptr<Sample>& sample, int T=1);
-
-    // Subscriber callbacks.
-    // Position command callback.
+    //
+    // // Subscriber callbacks.
+    // // Position command callback.
     virtual void position_subscriber_callback(const gps_agent_pkg::PositionCommand::ConstPtr& msg);
-    // Trial command callback.
+    // // Trial command callback.
     virtual void trial_subscriber_callback(const gps_agent_pkg::TrialCommand::ConstPtr& msg);
     virtual void test_callback(const std_msgs::Empty::ConstPtr& msg);
-    // Relax command callback.
+    // // Relax command callback.
     virtual void relax_subscriber_callback(const gps_agent_pkg::RelaxCommand::ConstPtr& msg);
-    // Data request callback.
+    // // Data request callback.
     virtual void data_request_subscriber_callback(const gps_agent_pkg::DataRequest::ConstPtr& msg);
-    //tf callback
+    // //tf callback
     virtual void tf_robot_action_command_callback(const gps_agent_pkg::TfActionCommand::ConstPtr& msg);
 
     // Update functions.
@@ -153,7 +153,7 @@ public:
     // Get current encoder readings (robot-dependent).
     virtual void get_joint_encoder_readings(Eigen::VectorXd &angles, gps::ActuatorType arm) const = 0;
     // Get forward kinematics solver.
-    virtual void get_fk_solver(boost::shared_ptr<KDL::ChainFkSolverPos> &fk_solver, boost::shared_ptr<KDL::ChainJntToJacSolver> &jac_solver, gps::ActuatorType arm);
+    // virtual void get_fk_solver(boost::shared_ptr<KDL::ChainFkSolverPos> &fk_solver, boost::shared_ptr<KDL::ChainJntToJacSolver> &jac_solver, gps::ActuatorType arm);
 
     //tf controller commands.
     //tf publish observation command.

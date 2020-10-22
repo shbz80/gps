@@ -6,9 +6,10 @@
 
 namespace gps_control {
 
-// Plugin constructor.
+// // Plugin constructor.
 GPSYumiPlugin::GPSYumiPlugin()
 {
+    NUM_JOINTS = 7;
     // Some basic variable initialization.
     controller_counter_ = 0;
     controller_step_length_ = 50; // do not use this when using controller_frequency_
@@ -16,9 +17,9 @@ GPSYumiPlugin::GPSYumiPlugin()
     controller_period_ms_ = 10;
     current_controller_period_ms_ = 0;
 
-    active_arm_stat_fric_.resize(7);
+    active_arm_stat_fric_.resize(NUM_JOINTS);
     active_arm_stat_fric_.clear();
-    active_arm_stat_fric_percent.resize(7);
+    active_arm_stat_fric_percent.resize(NUM_JOINTS);
     active_arm_stat_fric_percent.clear();
     // active_arm_stat_fric_.push_back(2.43);
     // active_arm_stat_fric_.push_back(2.76);
@@ -46,7 +47,7 @@ GPSYumiPlugin::GPSYumiPlugin()
     // active_arm_stat_fric_.push_back(1.0);
     active_arm_stat_fric_.push_back(0.4);
 
-    active_arm_dyn_fric_.resize(7);
+    active_arm_dyn_fric_.resize(NUM_JOINTS);
     active_arm_dyn_fric_.clear();
     active_arm_dyn_fric_.push_back(1.06);
     active_arm_dyn_fric_.push_back(1.09);
@@ -56,14 +57,15 @@ GPSYumiPlugin::GPSYumiPlugin()
     active_arm_dyn_fric_.push_back(0.08);
     active_arm_dyn_fric_.push_back(0.08);
 
-    active_arm_fric_trq_.resize(7);
+    active_arm_fric_trq_.resize(NUM_JOINTS);
     active_arm_fric_trq_.clear();
-}
 
-// Destructor.
+}
+//
+// // Destructor.
 GPSYumiPlugin::~GPSYumiPlugin()
 {
-    // Nothing to do here, since all instance variables are destructed automatically.
+//     // Nothing to do here, since all instance variables are destructed automatically.
 }
 
 // Initialize the object and store the robot state.
@@ -71,46 +73,47 @@ bool GPSYumiPlugin::init(hardware_interface::EffortJointInterface* hw, ros::Node
 // bool GPSYumiPlugin::init(pr2_mechanism_model::RobotState* robot, ros::NodeHandle& n)
 {
     // Variables.
-    std::string root_name, active_tip_name, passive_tip_name, robot_desc_string;
+    // std::string root_name, active_tip_name, passive_tip_name, robot_desc_string;
 
     ROS_INFO_STREAM("GPSYumiPlugin init begin");
-    // Create FK solvers.
-    // Get the name of the root.
-    if(!n.getParam("root_name", root_name)) {
-        ROS_ERROR("Property root_name not found in namespace: '%s'", n.getNamespace().c_str());
-        return false;
-    }
 
-    // Get active and passive arm end-effector names.
-    if(!n.getParam("active_tip_name", active_tip_name)) {
-        ROS_ERROR("Property active_tip_name not found in namespace: '%s'", n.getNamespace().c_str());
-        return false;
-    }
-    if(!n.getParam("passive_tip_name", passive_tip_name)) {
-        ROS_ERROR("Property passive_tip_name not found in namespace: '%s'", n.getNamespace().c_str());
-        return false;
-    }
+    // // Create FK solvers.
+    // // Get the name of the root.
+    // if(!n.getParam("root_name", root_name)) {
+    //     ROS_ERROR("Property root_name not found in namespace: '%s'", n.getNamespace().c_str());
+    //     return false;
+    // }
+    //
+    // // Get active and passive arm end-effector names.
+    // if(!n.getParam("active_tip_name", active_tip_name)) {
+    //     ROS_ERROR("Property active_tip_name not found in namespace: '%s'", n.getNamespace().c_str());
+    //     return false;
+    // }
+    // if(!n.getParam("passive_tip_name", passive_tip_name)) {
+    //     ROS_ERROR("Property passive_tip_name not found in namespace: '%s'", n.getNamespace().c_str());
+    //     return false;
+    // }
+    //
+    // // Create the robot model from param server.
+    // // TODO:the robot model may be available from the hardware interface given by the
+    // // controller manager. Change this later
+    // if(!n.getParam("robot_description", robot_desc_string)) {
+    //     ROS_ERROR("Property robot_description not found in namespace: '%s'", n.getNamespace().c_str());
+    //     return false;
+    // }
+    //
+    //
+    // // Create active arm chain.
+    // if(!active_arm_chain_.init(hw, robot_desc_string, root_name, active_tip_name)) {
+    //     ROS_ERROR("Controller could not use the chain from '%s' to '%s'", root_name.c_str(), active_tip_name.c_str());
+    //     return false;
+    // }
 
-    // Create the robot model from param server.
-    // TODO:the robot model may be available from the hardware interface given by the
-    // controller manager. Change this later
-    if(!n.getParam("robot_description", robot_desc_string)) {
-        ROS_ERROR("Property robot_description not found in namespace: '%s'", n.getNamespace().c_str());
-        return false;
-    }
-
-
-    // Create active arm chain.
-    if(!active_arm_chain_.init(hw, robot_desc_string, root_name, active_tip_name)) {
-        ROS_ERROR("Controller could not use the chain from '%s' to '%s'", root_name.c_str(), active_tip_name.c_str());
-        return false;
-    }
-
-    // Create passive arm chain.
-    if(!passive_arm_chain_.init(hw, robot_desc_string, root_name, passive_tip_name)) {
-        ROS_ERROR("Controller could not use the chain from '%s' to '%s'", root_name.c_str(), passive_tip_name.c_str());
-        return false;
-    }
+    // // Create passive arm chain.
+    // if(!passive_arm_chain_.init(hw, robot_desc_string, root_name, passive_tip_name)) {
+    //     ROS_ERROR("Controller could not use the chain from '%s' to '%s'", root_name.c_str(), passive_tip_name.c_str());
+    //     return false;
+    // }
 
     // only for testing, delete this
     //std::string param_name_temp="/yumi/active_arm_joint_name_1";
@@ -118,81 +121,82 @@ bool GPSYumiPlugin::init(hardware_interface::EffortJointInterface* hw, ros::Node
     //n.getParam(param_name_temp, param_value_temp);
     //ROS_INFO_STREAM(param_name_temp+": "+param_value_temp);
 
-    // Create KDL chains, solvers, etc.
-    // KDL chains.
-    passive_arm_chain_.toKDL(passive_arm_fk_chain_);
-    active_arm_chain_.toKDL(active_arm_fk_chain_);
+    // // Create KDL chains, solvers, etc.
+    // // KDL chains.
+    // passive_arm_chain_.toKDL(passive_arm_fk_chain_);
+    // active_arm_chain_.toKDL(active_arm_fk_chain_);
+    //
+    // // Pose solvers.
+    // passive_arm_fk_solver_.reset(new KDL::ChainFkSolverPos_recursive(passive_arm_fk_chain_));
+    // active_arm_fk_solver_.reset(new KDL::ChainFkSolverPos_recursive(active_arm_fk_chain_));
+    //
+    // // Jacobian sovlers.
+    // passive_arm_jac_solver_.reset(new KDL::ChainJntToJacSolver(passive_arm_fk_chain_));
+    // active_arm_jac_solver_.reset(new KDL::ChainJntToJacSolver(active_arm_fk_chain_));
+    //
+    // // some fwd kin - temp calculations - delete after use
+    // KDL::Frame temp_pose_;
+    // KDL::JntArray temp_jnt_array_;
+    // //Eigen::Vector3d pos;
+    // //Eigen::Matrix3d rot;
+    // double pos, rot;
+    // temp_jnt_array_.resize(7);
+    // // temp_jnt_array_(0)=-1.147903;
+    // // temp_jnt_array_(1)=-1.462062;
+    // // temp_jnt_array_(2)=0.831475;
+    // // temp_jnt_array_(3)=0.573341;
+    // // temp_jnt_array_(4)=2.039243;
+    // // temp_jnt_array_(5)=1.563640;
+    // // temp_jnt_array_(6)=-2.156354;
+    //
+    // temp_jnt_array_(0)=-0.79005;
+    // temp_jnt_array_(1)=-1.79093;
+    // temp_jnt_array_(2)=0.77403;
+    // temp_jnt_array_(3)=0.74101;
+    // temp_jnt_array_(4)=2.11053;
+    // temp_jnt_array_(5)=1.07796;
+    // temp_jnt_array_(6)=-2.01606;
+    //
+    // active_arm_fk_solver_->JntToCart(temp_jnt_array_, temp_pose_);
+    // for (unsigned i = 0; i < 3; i++){
+    //     pos = temp_pose_.p(i);
+    //     ROS_INFO_STREAM("fk pos x0:"+to_string(i)+":"+to_string(pos));
+    //   }
+    // for (unsigned j = 0; j < 3; j++)
+    //     for (unsigned i = 0; i < 3; i++){
+    //         rot = temp_pose_.M(i,j);
+    //         ROS_INFO_STREAM("fk rot x0:"+to_string(i)+to_string(j)+":"+to_string(rot));
+    //       }
+    //
+    // // inserted pos
+    // // temp_jnt_array_(0)=-1.256637;
+    // // temp_jnt_array_(1)=-1.462586;
+    // // temp_jnt_array_(2)=1.106015;
+    // // temp_jnt_array_(3)=0.301418;
+    // // temp_jnt_array_(4)=2.185327;
+    // // temp_jnt_array_(5)=1.244071;
+    // // temp_jnt_array_(6)=-2.070659;
+    //
+    // temp_jnt_array_(0)=-1.32847;
+    // temp_jnt_array_(1)=-1.57387;
+    // temp_jnt_array_(2)=1.01143;
+    // temp_jnt_array_(3)=0.26778;
+    // temp_jnt_array_(4)=2.26350;
+    // temp_jnt_array_(5)=1.38524;
+    // temp_jnt_array_(6)=-2.01606;
+    //
+    //
+    // active_arm_fk_solver_->JntToCart(temp_jnt_array_, temp_pose_);
+    // for (unsigned i = 0; i < 3; i++){
+    //     pos = temp_pose_.p(i);
+    //     ROS_INFO_STREAM("fk pos tgt:"+to_string(i)+":"+to_string(pos));
+    //   }
+    // for (unsigned j = 0; j < 3; j++)
+    //     for (unsigned i = 0; i < 3; i++){
+    //         rot = temp_pose_.M(i,j);
+    //         ROS_INFO_STREAM("fk rot tgt:"+to_string(i)+to_string(j)+":"+to_string(rot));
+    //       }
 
-    // Pose solvers.
-    passive_arm_fk_solver_.reset(new KDL::ChainFkSolverPos_recursive(passive_arm_fk_chain_));
-    active_arm_fk_solver_.reset(new KDL::ChainFkSolverPos_recursive(active_arm_fk_chain_));
-
-    // Jacobian sovlers.
-    passive_arm_jac_solver_.reset(new KDL::ChainJntToJacSolver(passive_arm_fk_chain_));
-    active_arm_jac_solver_.reset(new KDL::ChainJntToJacSolver(active_arm_fk_chain_));
-
-    // some fwd kin - temp calculations - delete after use
-    KDL::Frame temp_pose_;
-    KDL::JntArray temp_jnt_array_;
-    //Eigen::Vector3d pos;
-    //Eigen::Matrix3d rot;
-    double pos, rot;
-    temp_jnt_array_.resize(7);
-    // temp_jnt_array_(0)=-1.147903;
-    // temp_jnt_array_(1)=-1.462062;
-    // temp_jnt_array_(2)=0.831475;
-    // temp_jnt_array_(3)=0.573341;
-    // temp_jnt_array_(4)=2.039243;
-    // temp_jnt_array_(5)=1.563640;
-    // temp_jnt_array_(6)=-2.156354;
-
-    temp_jnt_array_(0)=-0.79005;
-    temp_jnt_array_(1)=-1.79093;
-    temp_jnt_array_(2)=0.77403;
-    temp_jnt_array_(3)=0.74101;
-    temp_jnt_array_(4)=2.11053;
-    temp_jnt_array_(5)=1.07796;
-    temp_jnt_array_(6)=-2.01606;
-
-    active_arm_fk_solver_->JntToCart(temp_jnt_array_, temp_pose_);
-    for (unsigned i = 0; i < 3; i++){
-        pos = temp_pose_.p(i);
-        ROS_INFO_STREAM("fk pos x0:"+to_string(i)+":"+to_string(pos));
-      }
-    for (unsigned j = 0; j < 3; j++)
-        for (unsigned i = 0; i < 3; i++){
-            rot = temp_pose_.M(i,j);
-            ROS_INFO_STREAM("fk rot x0:"+to_string(i)+to_string(j)+":"+to_string(rot));
-          }
-
-    // inserted pos
-    // temp_jnt_array_(0)=-1.256637;
-    // temp_jnt_array_(1)=-1.462586;
-    // temp_jnt_array_(2)=1.106015;
-    // temp_jnt_array_(3)=0.301418;
-    // temp_jnt_array_(4)=2.185327;
-    // temp_jnt_array_(5)=1.244071;
-    // temp_jnt_array_(6)=-2.070659;
-
-    temp_jnt_array_(0)=-1.32847;
-    temp_jnt_array_(1)=-1.57387;
-    temp_jnt_array_(2)=1.01143;
-    temp_jnt_array_(3)=0.26778;
-    temp_jnt_array_(4)=2.26350;
-    temp_jnt_array_(5)=1.38524;
-    temp_jnt_array_(6)=-2.01606;
-
-
-    active_arm_fk_solver_->JntToCart(temp_jnt_array_, temp_pose_);
-    for (unsigned i = 0; i < 3; i++){
-        pos = temp_pose_.p(i);
-        ROS_INFO_STREAM("fk pos tgt:"+to_string(i)+":"+to_string(pos));
-      }
-    for (unsigned j = 0; j < 3; j++)
-        for (unsigned i = 0; i < 3; i++){
-            rot = temp_pose_.M(i,j);
-            ROS_INFO_STREAM("fk rot tgt:"+to_string(i)+to_string(j)+":"+to_string(rot));
-          }
     // Pull out joint states.
     int joint_index;
     active_arm_joint_states_.clear();
@@ -223,9 +227,11 @@ bool GPSYumiPlugin::init(hardware_interface::EffortJointInterface* hw, ros::Node
         joint_index++;
     }
     // Validate that the number of joints in the chain equals the length of the active arm joint state.
-    if (active_arm_fk_chain_.getNrOfJoints() != active_arm_joint_states_.size())
+
+    // if (active_arm_fk_chain_.getNrOfJoints() != active_arm_joint_states_.size())
+    if (NUM_JOINTS != active_arm_joint_states_.size())
     {
-        ROS_INFO_STREAM("num_fk_chain: " + to_string(active_arm_fk_chain_.getNrOfJoints()));
+        ROS_INFO_STREAM("num_fk_chain: " + to_string(NUM_JOINTS));
         ROS_INFO_STREAM("num_joint_state: " + to_string(active_arm_joint_states_.size()));
         ROS_ERROR("Number of joints in the active arm FK chain does not match the number of joints in the active arm joint state!");
         return false;
@@ -253,24 +259,25 @@ bool GPSYumiPlugin::init(hardware_interface::EffortJointInterface* hw, ros::Node
         joint_index++;
     }
     // Validate that the number of joints in the chain equals the length of the active arm joint state.
-    if (passive_arm_fk_chain_.getNrOfJoints() != passive_arm_joint_states_.size())
+    // if (passive_arm_fk_chain_.getNrOfJoints() != passive_arm_joint_states_.size())
+    if (NUM_JOINTS != passive_arm_joint_states_.size())
     {
-        ROS_INFO_STREAM("num_fk_chain: " + to_string(passive_arm_fk_chain_.getNrOfJoints()));
+        ROS_INFO_STREAM("num_fk_chain: " + to_string(NUM_JOINTS));
         ROS_INFO_STREAM("num_joint_state: " + to_string(passive_arm_joint_states_.size()));
         ROS_ERROR("Number of joints in the passive arm FK chain does not match the number of joints in the passive arm joint state!");
         return false;
     }
 
     // Allocate torques array.
-    active_arm_torques_.resize(active_arm_fk_chain_.getNrOfJoints());
-    passive_arm_torques_.resize(passive_arm_fk_chain_.getNrOfJoints());
-
+    active_arm_torques_.resize(NUM_JOINTS);
+    passive_arm_torques_.resize(NUM_JOINTS);
+    //
     // Initialize ROS subscribers/publishers, sensors, and position controllers.
     // Note that this must be done after the FK solvers are created, because the sensors
     // will ask to use these FK solvers!
     initialize(n);
     ROS_INFO_STREAM("GPSYumiPlugin init end");
-    //Tell the PR2 controller manager that we initialized everything successfully.
+    // Tell the PR2 controller manager that we initialized everything successfully.
     return true;
 }
 
@@ -314,7 +321,7 @@ void GPSYumiPlugin::stopping(const ros::Time& time)
 void GPSYumiPlugin::update(const ros::Time& time, const ros::Duration& period)
 // void GPSYumiPlugin::update()
 {
-    //ROS_INFO_STREAM("GPSYumiPlugin update begin");
+    ROS_INFO_STREAM("GPSYumiPlugin update begin");
     // Get current time.
     //last_update_time_ = robot_->getTime();
     ros::Duration dur = time - last_update_time_;
@@ -369,7 +376,7 @@ void GPSYumiPlugin::update(const ros::Time& time, const ros::Duration& period)
 // Get current time.
 ros::Time GPSYumiPlugin::get_current_time() const
 {
-    return last_update_time_;
+    // return last_update_time_;
 }
 
 // Get current encoder readings (robot-dependent).
@@ -403,6 +410,8 @@ void GPSYumiPlugin::get_joint_encoder_readings(Eigen::VectorXd &angles, gps::Act
 }
 
 // Register controller to pluginlib
-PLUGINLIB_DECLARE_CLASS(gps_agent_pkg, GPSYumiPlugin,
-						gps_control::GPSYumiPlugin,
-						controller_interface::ControllerBase)
+
+// PLUGINLIB_DECLARE_CLASS(gps_agent_pkg, GPSYumiPlugin,
+// 						gps_control::GPSYumiPlugin,
+// 						controller_interface::ControllerBase)
+PLUGINLIB_EXPORT_CLASS(gps_control::GPSYumiPlugin, controller_interface::ControllerBase)

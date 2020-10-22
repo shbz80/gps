@@ -2,7 +2,6 @@
 This is the PR2-specific version of the robot plugin.
 */
 #pragma once
-
 // Headers.
 #include <controller_interface/controller.h>
 #include <hardware_interface/joint_command_interface.h>
@@ -25,12 +24,14 @@ namespace gps_control
 {
 
 class GPSYumiPlugin: public RobotPlugin, public controller_interface::Controller<hardware_interface::EffortJointInterface>
+// class GPSYumiPlugin: public controller_interface::Controller<hardware_interface::EffortJointInterface>
 //class GPSYumiPlugin: public controller_interface::Controller<hardware_interface::EffortJointInterface>
 {
 private:
     // PR2-specific chain object necessary to construct the KDL chain.
     //pr2_mechanism_model::KdlChain passive_arm_chain_, active_arm_chain_;
-    KdlChain passive_arm_chain_, active_arm_chain_;
+    // Chain passive_arm_chain_, active_arm_chain_;
+    // KdlChain passive_arm_chain_, active_arm_chain_;
     // This is a pointer to the robot state, which we get when initialized and have to keep after that.
     //pr2_mechanism_model::RobotState* robot_;
     // Passive arm joint state handlers.
@@ -63,6 +64,7 @@ private:
     int controller_period_ms_;
     // Controller period counter ms.
     int current_controller_period_ms_;
+    int NUM_JOINTS;
 public:
     // Constructor (this should do nothing).
     GPSYumiPlugin();
