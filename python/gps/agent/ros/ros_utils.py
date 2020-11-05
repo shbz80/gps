@@ -74,7 +74,7 @@ class ServiceEmulator(object):
         self._subscriber_msg = None
 
     def _callback(self, message):
-        print('call_back_recieved')
+        # print('call_back_recieved')
         if self._waiting:
             self._subscriber_msg = message
             self._waiting = False

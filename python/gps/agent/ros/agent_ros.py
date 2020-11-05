@@ -16,18 +16,20 @@ from gps.agent.ros.ros_utils import ServiceEmulator, msg_to_sample, \
 from gps.proto.gps_pb2 import TRIAL_ARM, AUXILIARY_ARM
 from gps_agent_pkg.msg import TrialCommand, SampleResult, PositionCommand, \
         RelaxCommand, DataRequest, TfActionCommand, TfObsData
-
+from yumikin.YumiKinematics import YumiKinematics
 try:
     from gps.algorithm.policy.tf_policy import TfPolicy
 except ImportError:  # user does not have tf installed.
     TfPolicy = None
+from normflow_policy.rewards import process_cart_path_rwd
+from garage._dtypes import EpisodeBatch
 
 class AgentROS(Agent):
     """
     All communication between the algorithms and ROS is done through
     this class.
     """
-    def __init__(self, hyperparams, init_node=True):
+    def __init__(self, hyperparams, policy, env_spec, init_node=True):
         """
         Initialize agent.
         Args:
@@ -41,7 +43,8 @@ class AgentROS(Agent):
             rospy.init_node('gps_agent_ros_node')
         self._init_pubs_and_subs()
         self._seq_id = 0  # Used for setting seq in ROS commands.
-
+        self.policy = policy
+        self.env_spec = env_spec
         conditions = self._hyperparams['conditions']
 
         self.x0 = []
@@ -49,10 +52,17 @@ class AgentROS(Agent):
             self._hyperparams[field] = setup(self._hyperparams[field],
                                              conditions)
         self.x0 = self._hyperparams['x0']
-
+        q0 = self.x0[0][:7]
         r = rospy.Rate(1)
         r.sleep()
-
+        self.kin = YumiKinematics(self._hyperparams['kin_params'])
+        self.M_tra = np.diag(self.kin.get_cart_intertia_d(q0))[:3]
+        self.K_tra = self._hyperparams['K_tra']
+        self.D_tra = np.max(np.sqrt(np.multiply(self.M_tra, self.K_tra))) * np.eye(3)
+        self.M_rot = np.diag(self.kin.get_cart_intertia_d(q0))[3:]
+        self.K_rot = self._hyperparams['K_rot']
+        self.D_rot = np.max(np.sqrt(np.multiply(self.M_rot, self.K_rot))) * np.eye(3)
+        self.J_Ad_curr = None
         self.use_tf = False
         self.observations_stale = True
 
@@ -138,8 +148,10 @@ class AgentROS(Agent):
                        condition_data[TRIAL_ARM]['data'])
         # self.reset_arm(AUXILIARY_ARM, condition_data[AUXILIARY_ARM]['mode'],
         #                condition_data[AUXILIARY_ARM]['data'])
-        if policy:
-            policy.reset()
+        # if policy:
+        #     policy.reset()
+        del self.kin
+        self.kin = YumiKinematics(self._hyperparams['kin_params'])
         time.sleep(2.0)  # useful for the real robot, so it stops completely
         print('Reset done')
 
@@ -156,7 +168,7 @@ class AgentROS(Agent):
             sample: A Sample object.
         """
         print ('Sample initiated')
-        self._init_tf(policy.dU)
+        self._init_tf(self.dU)
 
         self.reset(condition)
         # Generate noise.
@@ -168,7 +180,7 @@ class AgentROS(Agent):
         # Execute trial.
         trial_command = TrialCommand()
         trial_command.id = self._get_next_seq_id()
-        trial_command.controller = policy_to_msg(policy, noise)
+        trial_command.controller = policy_to_msg(self, noise)
         trial_command.T = self.T
         trial_command.id = self._get_next_seq_id()
         trial_command.frequency = self._hyperparams['frequency']
@@ -213,7 +225,10 @@ class AgentROS(Agent):
                 # s_time = time.time()
                 # print('ROS com time:',time.time() - s_time)
                 X.append(last_obs)
+                s_time = time.time()
                 u, f = self._get_new_action(policy, last_obs)
+                u[-1] = 0. # todo
+                # print('Sample time:', time.time() - s_time)
                 # if self.current_action_id==1:
                     # print('Initial torque', u)
                     # print('Initial force', f)
@@ -227,6 +242,7 @@ class AgentROS(Agent):
                 self.current_action_id += 1
                 # print('Current action id',self.current_action_id)
             else:
+                # rospy.sleep(0.005)
                 rospy.sleep(0.005)
                 consecutive_failures += 1
                 # if time.time() - start_time <= time_to_run and consecutive_failures > 5 and self.current_action_id>1 and self.current_action_id<=self.T:
@@ -243,16 +259,27 @@ class AgentROS(Agent):
                 #     should_stop = False
         rospy.sleep(0.25)  # wait for finished trial to come in.
         path = {}
-        path['observations'] = np.array(X)
-        path['actions'] = np.array(U)
+        path['observations'] = None
+        path['actions'] = None
         path['agent_infos'] = {}
-        path['agent_infos']['mean'] = np.array(F)
+        path['agent_infos']['jt'] = np.array(U)
+        path['agent_infos']['ef'] = np.array(F)
+        path['agent_infos']['jx'] = np.array(X)
         print('Samle with size', len(X))
         # result = self._trial_service._subscriber_msg
         return path  # the trial has completed. Here is its message.
 
-    def _get_new_action(self, policy, obs):
-        return policy.act(None, obs, None, None)
+    def _get_new_action(self, policy, jx):
+        # return policy.act(None, obs, None, None)
+        # assert (jx.shape[0] == 7 * 2)
+        x_d_e, x_dot_d_e, J_Ad = self.kin.get_cart_error_frame_terms(jx[:7], jx[7:])
+        ex = np.concatenate((x_d_e, x_dot_d_e))
+        f_t, _ = policy.get_action(np.concatenate((ex[:3], ex[6:9])))
+        # f_t = -np.matmul(self.K_tra, ex[:3]) - np.matmul(self.D_tra, ex[6:9])
+        f_r = -np.matmul(self.K_rot, ex[3:6]) - np.matmul(self.D_rot, ex[9:])
+        f = np.concatenate((f_t, f_r))
+        u = J_Ad.T.dot(f)
+        return u, f
 
     def _tf_callback(self, message):
         self._tf_subscriber_msg = message
@@ -274,3 +301,22 @@ class AgentROS(Agent):
             r.sleep()
         self.use_tf = True
         self.observations_stale = True
+
+    def shutdown_worker(self):
+        return None
+
+    def obtain_samples(self,
+        itr, batch_size,
+        agent_update=None,
+        env_update=None):
+        S = self._hyperparams['episode_num']
+        paths = []
+        for s in range(S):
+            print('episode',s)
+            path = self.sample(self.policy, 0, verbose=True, save=False, noisy=False)
+            path = process_cart_path_rwd(path,self.kin)
+            paths.append(path)
+
+        return EpisodeBatch.from_list(self.env_spec,paths)
+
+
